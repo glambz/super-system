@@ -32,9 +32,9 @@ Match styling density to what the screen is for:
 ## Spec artifact
 
 - **Project copy (source of truth):** `docs/design/DESIGN.md`, plus `docs/design/prototype-<a|b|c>-design.md` while options are open. Use the build/change variant in `references/design-md-template.md`.
-- **Library copy:** if `designLibrary` is set, copy the project's DESIGN.md (and prototype docs) to `<designLibrary>/<project-name>/<page-type>/` after Gate 1 and again at the end of the run. Never edit the library copy directly; refresh it from the project copy.
+- **Library copy:** if `designLibrary` is set, copy the project's DESIGN.md (and prototype docs) to `<designLibrary>/<project-name>/<page-type>/` after Gate 1 and again at the end of the run. Never edit the library copy directly; refresh it from the project copy. Refresh means merge, as in the next bullet, never a plain overwrite.
 - **`inspect` output:** `<designLibrary>/<domain>/<page-type>/DESIGN.md`, or `./design-library/<domain>/<page-type>/DESIGN.md` when `designLibrary` is not set.
-- **Existing entries:** merge updates into them; never silently erase historical notes or working canvas links.
+- **Existing entries:** merge updates into them; never silently erase historical notes or working canvas links. Carry the existing `history:` list and notes over unchanged and append a new `history:` entry for this run.
 
 ## Implementation defaults
 
@@ -47,7 +47,7 @@ Match styling density to what the screen is for:
 
 - Drive a real browser at 1440, 768 and 390 px wide.
 - For each in-scope route: render, interact (hover, focus, forms, dialogs, navigation), read the console, watch for layout shift.
-- Check text contrast with `python scripts/contrast-check.py <fg> <bg>`.
+- Check text contrast with `python <skill-dir>/scripts/contrast-check.py <fg> <bg>`, where `<skill-dir>` is the folder holding this skill's SKILL.md. It exits 1 whenever normal text fails, so for large text read the printed large-text verdict, not the exit code.
 - Review against the current Vercel Web Interface Guidelines via `web-design-guidelines`.
 
 ## Quality lenses

@@ -10,7 +10,8 @@ If a platform can't run subagents at all, or the user declines the slot agents, 
 
 ## Claude Code
 
-- **Detect:** `Agent` and `Skill` tools exist; env `CLAUDECODE=1`; `.claude/` folder.
+- **Config key:** `claude-code`
+- **Detect:** `Agent` and `Skill` tools exist; env `CLAUDECODE=1`.
 - **Spawn:** `Agent` tool with `model` (`opus` | `sonnet` | `haiku`) and `effort` (`low` | `medium` | `high` | `xhigh` | `max`) set per call. No slot agents needed.
 - **Installed skills:** listed in your context; load with the `Skill` tool.
 - **Default slots:** top = `opus`, mid = `sonnet`, cheap = `haiku`, effort `high` for all.
@@ -26,7 +27,8 @@ If a platform can't run subagents at all, or the user declines the slot agents, 
 
 ## Antigravity
 
-- **Detect:** `invoke_subagent` tool exists; `.agents/` and `~/.gemini/config/` folders; `agy` CLI.
+- **Config key:** `antigravity`
+- **Detect:** `invoke_subagent` tool exists. Tie-breakers: `~/.gemini/config/` folder, `agy` CLI.
 - **Spawn:** `invoke_subagent` on a slot agent. Agent files go in `~/.gemini/config/agents/<name>.md`; frontmatter `model:` accepts only `inherit` | `flash` | `pro`.
 - **Effort:** not settable per subagent. Thinking level (Low / Medium / High) is a conversation setting; for "Flash · high" ask the user to set High.
 - **Installed skills:** listed in your context each turn.
@@ -39,12 +41,13 @@ If a platform can't run subagents at all, or the user declines the slot agents, 
 | implementer | Argon (`inherit`) | Flash | Flash · high |
 | reviewer | Argon (`inherit`) | Argon (`inherit`) | Flash · high |
 
-This table overrides the generic one in SKILL.md: in normal the reviewer stays on the chat model while scouts and implementers use `flash`; in economy every subagent uses `flash`.
+In normal the reviewer stays on the chat model while scouts and implementers use `flash`; in economy every subagent uses `flash`.
 
 - Docs: https://antigravity.google/docs/subagents, https://antigravity.google/docs/models, https://antigravity.google/docs/skills
 
 ## Cursor
 
+- **Config key:** `cursor`
 - **Detect:** `.cursor/` folder; the Task tool lists custom subagents. No env var documented.
 - **Spawn:** Task tool on a slot agent in `~/.cursor/agents/<name>.md`. Frontmatter `model:` takes a model ID; effort goes in brackets, e.g. `model: <model-id>[effort=high]`.
 - **Installed skills:** discovered at startup and shown to you.
@@ -53,6 +56,7 @@ This table overrides the generic one in SKILL.md: in normal the reviewer stays o
 
 ## OpenCode
 
+- **Config key:** `opencode`
 - **Detect:** `task` and `skill` tools; `.opencode/` folder.
 - **Spawn:** `task` tool on a slot agent in `~/.config/opencode/agents/<name>.md` with `mode: subagent` and `model: <provider>/<model-id>`. Effort: a provider pass-through key such as `reasoningEffort: high`.
 - **Installed skills:** the `skill` tool's description lists them in `<available_skills>`.
@@ -61,6 +65,7 @@ This table overrides the generic one in SKILL.md: in normal the reviewer stays o
 
 ## Oh My Pi (omp)
 
+- **Config key:** `oh-my-pi`
 - **Detect:** `task` tool and `skill://` URLs; `~/.omp/agent/` folder.
 - **Spawn:** `task` tool with `agent: <slot agent>`. Agent files go in `~/.omp/agent/agents/<name>.md`, frontmatter `model: <provider>/<model-id>:<level>` (level `low` … `max`). A per-call `model` only works if the user enabled `task.perCallModel`; don't rely on it.
 - **Installed skills:** listed in the system prompt; load with `skill://<name>`.
@@ -69,7 +74,8 @@ This table overrides the generic one in SKILL.md: in normal the reviewer stays o
 
 ## Codex
 
-- **Detect:** `.codex/` or `~/.codex/` folder; `AGENTS.md`. No env var documented.
+- **Config key:** `codex`
+- **Detect:** no tool name or env var documented. Tie-breaker: `.codex/` or `~/.codex/` folder.
 - **Spawn:** ask Codex to spawn the slot agent by name. Agent files: `~/.codex/agents/<name>.toml` with `name`, `description`, `developer_instructions`, `model`, `model_reasoning_effort` (`low` … `ultra`, as the model supports). Spawn-time model overrides are unreliable; use the agent file.
 - **Installed skills:** name, description and path are listed in your context.
 - **Slots:** ask the user (first run). The model list is at https://learn.chatgpt.com/docs/models.
@@ -77,6 +83,7 @@ This table overrides the generic one in SKILL.md: in normal the reviewer stays o
 
 ## Kilo Code
 
+- **Config key:** `kilo-code`
 - **Detect:** `.kilo/` folder; `~/.config/kilo/kilo.jsonc`; `kilo` CLI.
 - **Spawn:** `task` tool on a slot agent in `~/.config/kilo/agents/<name>.md` with `model: <provider>/<model-id>`. Effort: a provider pass-through key such as `reasoningEffort`.
 - **Installed skills:** name, description and path are listed in the system prompt.
@@ -85,8 +92,8 @@ This table overrides the generic one in SKILL.md: in normal the reviewer stays o
 
 ## Any other platform
 
-Ask the user: does it support subagents, and how is a subagent's model chosen (per call, or in an agent file, and where)? Then use per-call selection, slot agents, or the single-agent fallback, in that order of preference. Ask for the available models and fill the slots.
+Ask the user for a short kebab-case config key, then: does it support subagents, and how is a subagent's model chosen (per call, or in an agent file, and where)? Then use per-call selection, slot agents, or the single-agent fallback, in that order of preference. Ask for the available models and fill the slots.
 
 ## Telling platforms apart
 
-OpenCode, Kilo Code and Oh My Pi share tool names (`task`, `skill`). Use the config folders above to tell them apart, and if signals conflict, ask.
+Tool names and env vars decide the platform. Config folders only break ties: `.agents/`, `.claude/` and `AGENTS.md` are read by many assistants, and OpenCode, Kilo Code and Oh My Pi share tool names (`task`, `skill`). A folder-only match, or conflicting signals, means ask the user.

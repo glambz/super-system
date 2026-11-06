@@ -15,11 +15,20 @@ MAX_SKILL_BYTES = 8192
 BANNED = [
     "indocyber", "C:\\Users", "Tasrock", "FF4905", "chamfer", "MiniMax",
     "gemini-3.8", "7f62f9c5", "1a29798d", "4263def4", "4764bd4a",
-    "antislop-human", "Creative Animation Effects",
+    "antislop-human", "Creative Animation Effects", "/Users/", "obsidian", "warm clay",
+    "Tactical Split", "Monolithic", "Kinetic", "Stepped Asymmetric", "hero stays at top",
 ]
 
-MODEL_NAMES = re.compile(r"\b(Opus|Sonnet|Haiku|Argon|Flash)\b")
+MODEL_NAMES = re.compile(r"\b(Opus|Sonnet|Haiku|Argon|Flash)\b", re.I)
 MODELS_ALLOWED_IN = "references/platforms.md"
+
+# Each rule is stated once (spec §2 anti-goal): these patterns must match exactly once across the skill.
+ONCE = [
+    r"root-cause instructions",
+    r"overrides the generic|role table there overrides",
+    r"console errors",
+    r"write the minimum|minimum that passes",
+]
 
 # path relative to SKILL_DIR -> phrases that must appear (case-insensitive).
 REQUIRED_PHRASES = {
@@ -28,15 +37,24 @@ REQUIRED_PHRASES = {
         "first-run", "never overwrite other platforms", "this run only", "Gate 1",
         "Gate 2", "reviewer", "references/platforms.md", "references/flows/",
         "references/track-ui.md", "references/track-backend.md", "Definition of done",
+        "missing or incomplete", "config.json.bak", "never replace it", "config folders only break ties",
+        "saved `slots` override", "used if installed",
     ],
     "references/track-ui.md": [
         "never silently erase", "tasteFile", "designLibrary", "1440", "390", "44px",
-        "prefers-reduced-motion",
+        "prefers-reduced-motion", "refresh means merge", "<skill-dir>/scripts/contrast-check.py",
     ],
     "references/track-backend.md": ["never prod", "ADR"],
     "references/design-md-template.md": [
-        "[Measured]", "[Observed]", "[Inferred]", "[Decided]", "superdesign:",
+        "[Measured]", "[Observed]", "[Inferred]", "[Decided]", "superdesign:", "history:",
     ],
+    "references/platforms.md": [
+        "Config key:** `claude-code`", "Config key:** `antigravity`", "Config key:** `cursor`",
+        "Config key:** `opencode`", "Config key:** `oh-my-pi`", "Config key:** `codex`",
+        "Config key:** `kilo-code`", "folder-only match",
+    ],
+    "references/flows/inspect.md": ["every label in every mode"],
+    "../../README.md": ["Flash · high", "cheap for mechanical tasks", "reported"],
 }
 
 
@@ -109,6 +127,16 @@ def check_phrases():
     return fails
 
 
+def check_once():
+    texts = [p.read_text(encoding="utf-8", errors="replace") for p in skill_files() if p.suffix == ".md"]
+    fails = []
+    for pat in ONCE:
+        n = sum(len(re.findall(pat, t, re.I)) for t in texts)
+        if n != 1:
+            fails.append(f"rule {pat!r} stated {n} times, expected once")
+    return fails
+
+
 def check_contrast():
     script = SKILL_DIR / "scripts" / "contrast-check.py"
     if not script.is_file():
@@ -120,7 +148,7 @@ def check_contrast():
 def main():
     fails = []
     for check in (check_frontmatter, check_size, check_banned, check_models_only_in_platforms,
-                  check_refs, check_phrases, check_contrast):
+                  check_refs, check_phrases, check_once, check_contrast):
         fails += check()
     for f in fails:
         print(f"FAIL: {f}")

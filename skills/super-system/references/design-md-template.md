@@ -24,6 +24,10 @@ superdesign:
     - id: "<uuid>"
       name: "[Draft Title] · mobile"
       viewport: "390x844"
+history:                        # append-only; one entry per run that changed this file
+  - date: "[YYYY-MM-DD]"
+    canvasUrl: "https://superdesign.dev/..."
+    note: "[what changed and why]"
 evidenceSummary:
   measuredTokens: [Count]
   observedProperties: [Count]

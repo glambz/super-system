@@ -21,7 +21,7 @@ To pick assistants explicitly:
 npx skills add glambz/super-system -g -a claude-code -a antigravity -a codex -a cursor -a opencode -a kilo -a pi -y
 ```
 
-This keeps **one real copy** in `~/.agents/skills/super-system/`. Codex, Cursor, OpenCode, Kilo Code and Oh My Pi read that folder directly. Claude Code gets a symlink to it in `~/.claude/skills/`. Updating (`npx skills update super-system -g`) updates every assistant at once.
+This keeps **one real copy** in `~/.agents/skills/super-system/`. Codex, Cursor, OpenCode and Kilo Code read that folder directly (per their docs); Oh My Pi is reported to as well. Claude Code gets a symlink to it in `~/.claude/skills/`. Updating (`npx skills update super-system -g`) updates every assistant at once.
 
 Notes:
 - **Antigravity:** its docs name `~/.gemini/config/skills/` as the global folder. If Antigravity doesn't list super-system, link it there:
@@ -52,7 +52,7 @@ super-system uses these as techniques inside its own steps. Install them for eac
 | animation | no public source confirmed | Optional: if you have an `animation` skill installed it is used; otherwise the run says it is missing and continues |
 | A browser the agent can drive | [Chrome DevTools MCP](https://github.com/ChromeDevTools/chrome-devtools-mcp) or [Playwright MCP](https://github.com/microsoft/playwright-mcp), or your assistant's built-in browser | MCP config: `{"mcpServers":{"chrome-devtools":{"command":"npx","args":["-y","chrome-devtools-mcp@latest"]}}}` · Claude Code: `claude mcp add playwright npx @playwright/mcp@latest` · Codex: `codex mcp add playwright npx "@playwright/mcp@latest"` |
 
-Where a platform isn't listed for a dependency, upstream doesn't document it. super-system then continues without that dependency and says so in its status line.
+Where a platform isn't listed for a dependency, upstream doesn't document an install for it; try `npx skills add <repo> -g`. super-system continues without a dependency only when no version exists for your platform at all, and says so in its status line.
 
 ## Usage
 
@@ -109,11 +109,13 @@ Later runs on that assistant don't ask again. Reinstalling or updating the skill
 
 | Role | Claude Code full | normal | economy | Antigravity full | normal | economy |
 |---|---|---|---|---|---|---|
-| scout | Opus | Sonnet | Haiku | Argon | Flash | Flash |
-| implementer | Opus | Sonnet | Sonnet (Haiku for mechanical tasks) | Argon | Flash | Flash |
-| reviewer | Opus | Sonnet | Sonnet | Argon | Argon | Flash |
+| scout | Opus | Sonnet | Haiku | Argon | Flash | Flash · high |
+| implementer | Opus | Sonnet | Sonnet (Haiku for mechanical tasks) | Argon | Flash | Flash · high |
+| reviewer | Opus | Sonnet | Sonnet | Argon | Argon | Flash · high |
 
-On other assistants, `full` uses your `top` slot everywhere. `normal` uses `mid`. `economy` uses `cheap` for scouts and `mid` for implementers and reviewers.
+Antigravity can't set reasoning per subagent; for "Flash · high" set the conversation's thinking level to High.
+
+On other assistants, `full` uses your `top` slot everywhere. `normal` uses `mid`. `economy` uses `cheap` for scouts and `mid` for implementers (cheap for mechanical tasks) and reviewers.
 
 ## Development
 

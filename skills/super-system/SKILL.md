@@ -9,12 +9,12 @@ You are the **orchestrator**. You run the flow, own both gates and every spec/pl
 
 ## Startup (every run)
 
-1. **Platform.** Detect which assistant you are running in (signals in `references/platforms.md`). If unsure, ask.
-2. **Settings.** Read `~/.super-system/config.json`. If the file is missing or has no entry for this platform, do first-run setup for this platform only:
+1. **Platform.** Detect which assistant you are running in from tool names and env vars (signals in `references/platforms.md`); config folders only break ties. If unsure, ask.
+2. **Settings.** Read `~/.super-system/config.json`, using the platform's config key from `references/platforms.md`. Saved `slots` override the defaults there. If the file is missing, or this platform's entry is missing or incomplete (no `workflow` or `models`, or no `slots` on a platform without built-in defaults), do first-run setup for this platform only:
    - Platform without built-in defaults in `references/platforms.md`: ask which models are available, map them to slots `top` / `mid` / `cheap`, each with a reasoning effort.
    - Set up subagent dispatch as `references/platforms.md` describes for this platform (it may offer to write slot agent files; ask first).
    - Ask for workflow mode and model mode.
-   - Write only this platform's entry; never overwrite other platforms' entries or the top-level fields. If the file is not valid JSON, show the error and ask before replacing it.
+   - Write only this platform's entry; never overwrite other platforms' entries or the top-level fields. If the file is not valid JSON, show the error, copy it to `config.json.bak`, and offer to fix the syntax in place; never replace it with a fresh file.
 3. **Overrides.** `--workflow` / `--models` (or plain words: "economy models this time") apply to this run only. At the end of the run, ask once whether to save them as this platform's default.
 4. **Tracks.** From the task and the codebase decide `ui`, `backend` or `ui+backend`.
 5. **Dependencies.** Check core always and UI only when the `ui` track is active (see Dependencies). Installable but missing: stop, name it, show the README's install command. No version exists for this platform: continue without it and say so in the status line.
@@ -79,7 +79,7 @@ Slot defaults per platform and how to spawn a subagent with a model and effort: 
 Use them as techniques inside your own steps. Never run another skill's whole workflow (its own approval pauses, plan files or subagents).
 - **Superpowers** (core): brainstorming's questioning style in "understand" (Gate 1 is the approval); test-driven-development in implementer tasks; systematic-debugging in `fix`; verification-before-completion in the final audit.
 - **Ponytail** (core): implementers write the minimum; reviewers reject bloat.
-- **UI track**: SuperDesign (canvas + asset generation), `design-taste-frontend`, `web-design-guidelines`, `animation`, `modern-web-guidance`, and a browser you can drive.
+- **UI track**: SuperDesign (canvas + asset generation), `design-taste-frontend`, `web-design-guidelines`, `modern-web-guidance`, and a browser you can drive. `animation` is used if installed (no public source; never stop for it).
 
 ## Safeguards
 
@@ -95,7 +95,6 @@ The final audit ticks every item. A failed item goes back to implementation; nev
 - [ ] Every Gate 2 task is done.
 - [ ] All tests pass (show the command and its output).
 - [ ] The active tracks' quality lenses pass for everything in scope.
-- [ ] UI: no console errors or warnings.
 - [ ] Nothing outside Gate 2 scope changed.
 - [ ] Anything not verified is listed as not verified.
 
