@@ -1,86 +1,150 @@
+<div align="center">
+
 # super-system
 
-An orchestrated delivery workflow for coding assistants, covering UI and backend work. It runs on any assistant that supports [Agent Skills](https://agentskills.io): Claude Code, Antigravity, Cursor, OpenCode, Oh My Pi, Codex, Kilo Code, and others.
+### One delivery workflow for every coding assistant, from brief to verified code.
 
-- **Five flows:** `build` (new feature or project), `change` (redesign or refactor), `fix` (root-cause a bug), `review` (read-only audit), `inspect` (live site → evidence-labeled `DESIGN.md`).
-- **Two dials,** each `full | normal | economy`:
-  - **workflow mode:** how much work (options explored, how often review happens, how deep the final audit goes)
-  - **model mode:** which models the subagents use. The model you chat with is always the orchestrator.
-- **Tracks:** UI steps (prototypes, browser QA, accessibility) and backend steps (design options, contract/integration tests, security), or both for full-stack work.
-- **Guardrails:** two human gates (approve the direction, approve the plan), a reviewer for every implementer, and a final audit against a written definition of done.
+[![skills](https://img.shields.io/badge/npx-skills-000000?style=flat-square&logo=npm&logoColor=white)](https://github.com/vercel-labs/skills)
+[![Node](https://img.shields.io/badge/node-%E2%89%A522.20-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org)
+[![Agent Skills](https://img.shields.io/badge/Agent%20Skills-compatible-6E56CF?style=flat-square)](https://agentskills.io)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
+
+**Plans with your best model. Builds with the model you can afford.**
+**Two human gates. A reviewer for every implementer. A final audit that doesn't take "looks fine" for an answer.**
+**A workflow, not a prompt.**
+
+**Claude Code · Antigravity · Cursor · OpenCode · Oh My Pi · Codex · Kilo Code**
+
+[Install](#install) · [What it does](#what-it-does) · [Flows](#flows) · [Modes](#modes) · [Dependencies](#dependencies) · [FAQ](#faq)
+
+`npx skills add glambz/super-system -g`
+
+</div>
+
+---
+
+## Before and after
+
+| | **Without super-system** | **With super-system** |
+|---|---|---|
+| **Planning** | The agent starts coding from the first sentence of your request | Questions first, 1–3 options with tradeoffs, then you pick (**Gate 1**) |
+| **Scope** | "While I was in there, I also refactored…" | Only what you approved at **Gate 2** changes |
+| **Review** | The agent that wrote the code says it's done | A separate reviewer runs the tests, reads the diff, and can reject |
+| **Cost** | One model for everything | Best model plans and audits; cheaper models implement, by your choice |
+| **UI** | Pastel gradients and three cards in a row | Real prototypes, browser QA at 1440 / 768 / 390, accessibility checks |
+| **Backend** | Tests "should pass" | Tests shown passing, migrations run on a copy, security and N+1 checks |
+| **Done** | "Looks good!" | A definition-of-done checklist; anything unverified is listed as unverified |
+
+---
 
 ## Install
+
+One copy, every assistant. The `skills` CLI puts the skill in `~/.agents/skills/super-system/` and links it where each assistant looks.
+
+### npx skills (recommended)
 
 ```bash
 npx skills add glambz/super-system -g
 ```
 
-To pick assistants explicitly:
+### Pick assistants explicitly
 
 ```bash
 npx skills add glambz/super-system -g -a claude-code -a antigravity -a codex -a cursor -a opencode -a kilo -a pi -y
 ```
 
-This keeps **one real copy** in `~/.agents/skills/super-system/`. Codex, Cursor, OpenCode and Kilo Code read that folder directly (per their docs); Oh My Pi is reported to as well. Claude Code gets a symlink to it in `~/.claude/skills/`. Updating (`npx skills update super-system -g`) updates every assistant at once.
+Codex, Cursor, OpenCode and Kilo Code read `~/.agents/skills/` directly (per their docs); Oh My Pi is reported to as well. Claude Code gets a symlink in `~/.claude/skills/`.
 
-Notes:
-- **Antigravity:** its docs name `~/.gemini/config/skills/` as the global folder. If Antigravity doesn't list super-system, link it there:
-  - macOS/Linux: `ln -s ~/.agents/skills/super-system ~/.gemini/config/skills/super-system`
-  - Windows: `mklink /J %USERPROFILE%\.gemini\config\skills\super-system %USERPROFILE%\.agents\skills\super-system`
-- **Cursor and OpenCode** also read `~/.claude/skills/`, so they may list the skill twice. It's the same files, so nothing conflicts.
-- Requires Node.js 22.20 or later for `npx skills`.
+### Antigravity
 
-## Dependencies
+Antigravity's docs name `~/.gemini/config/skills/` as its global folder. If it doesn't list super-system after install, link it:
 
-super-system uses these as techniques inside its own steps. Install them for each assistant you use; each harness needs its own install. The skill checks at startup and stops with the install command if a required one is missing.
-
-### Core (always required)
-
-| Dependency | Source | Install |
-|---|---|---|
-| Superpowers | [obra/superpowers](https://github.com/obra/superpowers) | Claude Code: `/plugin install superpowers@claude-plugins-official` · Cursor: `/add-plugin superpowers` · Codex: `/plugins` → search `superpowers` → Install · Antigravity: `agy plugin install https://github.com/obra/superpowers` · Pi: `pi install git:github.com/obra/superpowers` (Oh My Pi: not confirmed upstream) · OpenCode: ask it to "Fetch and follow instructions from https://raw.githubusercontent.com/obra/superpowers/refs/heads/main/.opencode/INSTALL.md" · Kilo Code: not documented upstream |
-| Ponytail | [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) | Claude Code: `/plugin marketplace add DietrichGebert/ponytail` then `/plugin install ponytail@ponytail` · Codex: `codex plugin marketplace add DietrichGebert/ponytail` then `codex plugin add ponytail@ponytail` · Antigravity: `agy plugin install https://github.com/DietrichGebert/ponytail` · Pi: `pi install git:github.com/DietrichGebert/ponytail` (Oh My Pi: not confirmed upstream) · OpenCode: `opencode plugin add @dietrichgebert/ponytail` · Kilo Code: add `{ "plugin": ["@dietrichgebert/ponytail"] }` to `~/.config/kilo/kilo.jsonc` · Cursor / any: `npx skills add DietrichGebert/ponytail -g` |
-
-### UI track (required when a task touches UI)
-
-| Dependency | Source | Install |
-|---|---|---|
-| SuperDesign | [superdesigndev/superdesign-skill](https://github.com/superdesigndev/superdesign-skill) | `npm install -g @superdesign/cli@latest`, then `superdesign login`, then `npx skills add superdesigndev/superdesign-skill -g` |
-| design-taste-frontend | [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) | `npx skills add Leonxlnx/taste-skill --skill design-taste-frontend -g` |
-| web-design-guidelines | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | `npx skills add vercel-labs/agent-skills --skill web-design-guidelines -g` |
-| modern-web-guidance | [GoogleChrome/modern-web-guidance](https://github.com/GoogleChrome/modern-web-guidance) | `npx skills add GoogleChrome/modern-web-guidance -g` (or the wizard: `npx modern-web-guidance@latest install`) |
-| animation | no public source confirmed | Optional: if you have an `animation` skill installed it is used; otherwise the run says it is missing and continues |
-| A browser the agent can drive | [Chrome DevTools MCP](https://github.com/ChromeDevTools/chrome-devtools-mcp) or [Playwright MCP](https://github.com/microsoft/playwright-mcp), or your assistant's built-in browser | MCP config: `{"mcpServers":{"chrome-devtools":{"command":"npx","args":["-y","chrome-devtools-mcp@latest"]}}}` · Claude Code: `claude mcp add playwright npx @playwright/mcp@latest` · Codex: `codex mcp add playwright npx "@playwright/mcp@latest"` |
-
-Where a platform isn't listed for a dependency, upstream doesn't document an install for it; try `npx skills add <repo> -g`. super-system continues without a dependency only when no version exists for your platform at all, and says so in its status line.
-
-## Usage
-
+```bash
+# macOS / Linux
+ln -s ~/.agents/skills/super-system ~/.gemini/config/skills/super-system
 ```
-/super-system build --workflow full --models normal
+
+```text
+:: Windows
+mklink /J %USERPROFILE%\.gemini\config\skills\super-system %USERPROFILE%\.agents\skills\super-system
+```
+
+Cursor and OpenCode also read `~/.claude/skills/`, so they may list the skill twice. It's the same files, so nothing conflicts.
+
+---
+
+## What it does
+
+- **Asks before it builds.** One question at a time until it knows what success looks like.
+- **Shows options, not a fait accompli.** Prototypes on a SuperDesign canvas for UI; API, schema or architecture options for backend.
+- **Stops twice.** Gate 1: you pick the direction. Gate 2: you approve the plan. Nothing is built before Gate 2.
+- **Splits the work.** Scouts read, implementers build, reviewers check. A reviewer is never on a weaker model than the implementer it checks.
+- **Audits at the end.** The model you chat with checks everything against a written definition of done.
+- **Keeps evidence honest.** Nothing measured is invented; nothing generated is passed off as real.
+
+The model you chat with is always the orchestrator. super-system never switches it; it chooses models only for the subagents it sends out.
+
+---
+
+## Flows
+
+| Flow | Covers | Pick it for |
+|---|---|---|
+| `build` | Understand → options → Gate 1 → plan → Gate 2 → implement + review → verify → audit | A new feature or a new project |
+| `change` | Same as `build`, starting with an audit of what exists | A redesign or refactor |
+| `fix` | Reproduce → root cause → fix plan → Gate 2 → failing regression test → fix | A bug, fixed where it starts |
+| `review` | Read-only audit, findings with `file:line` and severity | A branch, a PR, or a codebase health check |
+| `inspect` | Live URL → evidence-labeled `DESIGN.md` + canvas draft | Learning from a site you admire |
+
+Each flow runs a UI track, a backend track, or both, picked from the task and the codebase.
+
+---
+
+## Modes
+
+Two dials, set separately. Each is `full`, `normal` or `economy`.
+
+- **Workflow mode:** how much work gets done (options explored, review frequency, audit depth).
+- **Model mode:** which models the subagents run on.
+
+| Workflow | full | normal | economy |
+|---|---|---|---|
+| Options explored | 3 per screen/component | 2 for main, 1 for the rest | 1, main only |
+| Review | after every task | after every task | once per batch |
+| Final audit | every route, viewport and file | changed routes, all viewports | changed routes, desktop + mobile |
+
+| Model mode | Claude Code full | normal | economy | Antigravity full | normal | economy |
+|---|---|---|---|---|---|---|
+| scout | Opus | Sonnet | Haiku | Argon | Flash | Flash · high |
+| implementer | Opus | Sonnet | Sonnet (Haiku for mechanical tasks) | Argon | Flash | Flash · high |
+| reviewer | Opus | Sonnet | Sonnet | Argon | Argon | Flash · high |
+
+Antigravity can't set reasoning per subagent; for "Flash · high", set the conversation's thinking level to High. On other assistants, the first run asks which models you have and maps them to `top` / `mid` / `cheap`. Then `full` uses `top`, and `normal` uses `mid`. `economy` uses `cheap` for scouts and `mid` for implementers (cheap for mechanical tasks) and reviewers.
+
+Your choice is saved per assistant. Override it for one run:
+
+```bash
+/super-system build --workflow full --models economy
+```
+
+**`super-system · Claude Code · flow: build · workflow: full · models: economy · tracks: ui+backend`**
+
+At the end of an overridden run, it asks once whether to keep the override as the new default.
+
+### More examples
+
+```text
 /super-system change checkout
 /super-system fix "login returns 500 when email has a plus sign"
 /super-system review main..feature/payments
 /super-system inspect https://example.com landing-page
 ```
 
-Every run starts with a status line:
-
-```
-super-system · Claude Code · flow: build · workflow: full · models: normal · tracks: ui+backend
-```
-
-`--workflow` and `--models` (or plain words like "use economy models this time") apply to that run only. At the end the skill asks whether to keep them as the new default.
+---
 
 ## Settings
 
-The first run on each assistant does the following:
-
-1. If the assistant isn't Claude Code or Antigravity, it asks which models you have and maps them to `top` / `mid` / `cheap`.
-2. Where the assistant only lets you choose subagent models in agent files, it offers to write three small agent files (`super-system-top`, `-mid`, `-cheap`).
-3. It asks for your two modes and saves them to `~/.super-system/config.json`.
-
-Later runs on that assistant don't ask again. Reinstalling or updating the skill never touches this file.
+Saved in `~/.super-system/config.json`. Reinstalling or updating the skill never touches it.
 
 ```json
 {
@@ -102,20 +166,81 @@ Later runs on that assistant don't ask again. Reinstalling or updating the skill
 }
 ```
 
-- `tasteFile`: optional path to your own taste / anti-slop notes, read before any design exploration.
-- `designLibrary`: optional folder of `DESIGN.md` prior art. `build` and `change` copy UI designs there for later sessions. `inspect` writes there (default: `./design-library/` in the project).
+- **`tasteFile`:** optional path to your own taste and anti-slop notes, read before any design work.
+- **`designLibrary`:** optional folder of `DESIGN.md` prior art. `build` and `change` copy UI designs there for later sessions, and `inspect` writes there. The default is `./design-library/` in the project.
 
-### Default models
+---
 
-| Role | Claude Code full | normal | economy | Antigravity full | normal | economy |
-|---|---|---|---|---|---|---|
-| scout | Opus | Sonnet | Haiku | Argon | Flash | Flash · high |
-| implementer | Opus | Sonnet | Sonnet (Haiku for mechanical tasks) | Argon | Flash | Flash · high |
-| reviewer | Opus | Sonnet | Sonnet | Argon | Argon | Flash · high |
+## Dependencies
 
-Antigravity can't set reasoning per subagent; for "Flash · high" set the conversation's thinking level to High.
+super-system uses these as techniques inside its own steps. Each assistant needs its own install. At startup the skill checks for them, and if a required one is missing it stops and shows the install command.
 
-On other assistants, `full` uses your `top` slot everywhere. `normal` uses `mid`. `economy` uses `cheap` for scouts and `mid` for implementers (cheap for mechanical tasks) and reviewers.
+### Core (always required)
+
+| Dependency | Source | Install |
+|---|---|---|
+| Superpowers | [obra/superpowers](https://github.com/obra/superpowers) | Claude Code: `/plugin install superpowers@claude-plugins-official` · Cursor: `/add-plugin superpowers` · Codex: `/plugins` → search `superpowers` → Install · Antigravity: `agy plugin install https://github.com/obra/superpowers` · Pi: `pi install git:github.com/obra/superpowers` (Oh My Pi: not confirmed upstream) · OpenCode: ask it to "Fetch and follow instructions from https://raw.githubusercontent.com/obra/superpowers/refs/heads/main/.opencode/INSTALL.md" · Kilo Code: not documented upstream |
+| Ponytail | [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) | Claude Code: `/plugin marketplace add DietrichGebert/ponytail` then `/plugin install ponytail@ponytail` · Codex: `codex plugin marketplace add DietrichGebert/ponytail` then `codex plugin add ponytail@ponytail` · Antigravity: `agy plugin install https://github.com/DietrichGebert/ponytail` · Pi: `pi install git:github.com/DietrichGebert/ponytail` (Oh My Pi: not confirmed upstream) · OpenCode: `opencode plugin add @dietrichgebert/ponytail` · Kilo Code: add `{ "plugin": ["@dietrichgebert/ponytail"] }` to `~/.config/kilo/kilo.jsonc` · Cursor / any: `npx skills add DietrichGebert/ponytail -g` |
+
+### UI track (required when a task touches UI)
+
+| Dependency | Source | Install |
+|---|---|---|
+| SuperDesign | [superdesigndev/superdesign-skill](https://github.com/superdesigndev/superdesign-skill) | `npm install -g @superdesign/cli@latest`, then `superdesign login`, then `npx skills add superdesigndev/superdesign-skill -g` |
+| design-taste-frontend | [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) | `npx skills add Leonxlnx/taste-skill --skill design-taste-frontend -g` |
+| web-design-guidelines | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | `npx skills add vercel-labs/agent-skills --skill web-design-guidelines -g` |
+| modern-web-guidance | [GoogleChrome/modern-web-guidance](https://github.com/GoogleChrome/modern-web-guidance) | `npx skills add GoogleChrome/modern-web-guidance -g` (or the wizard: `npx modern-web-guidance@latest install`) |
+| animation | no public source confirmed | Optional: used if installed; otherwise the run says it is missing and continues |
+| A browser the agent can drive | [Chrome DevTools MCP](https://github.com/ChromeDevTools/chrome-devtools-mcp), [Playwright MCP](https://github.com/microsoft/playwright-mcp), or your assistant's built-in browser | MCP config: `{"mcpServers":{"chrome-devtools":{"command":"npx","args":["-y","chrome-devtools-mcp@latest"]}}}` · Claude Code: `claude mcp add playwright npx @playwright/mcp@latest` · Codex: `codex mcp add playwright npx "@playwright/mcp@latest"` |
+
+Where a platform isn't listed for a dependency, upstream doesn't document an install for it; try `npx skills add <repo> -g`. super-system continues without a dependency only when no version exists for your platform at all, and says so in its status line.
+
+---
+
+## Update
+
+```bash
+npx skills update super-system -g
+```
+
+Start a new session afterwards; most assistants read skills only at session start.
+
+---
+
+## FAQ
+
+**Does it change the model I'm chatting with?**
+No. The model you chat with plans, runs the gates and does the final audit. Model mode only picks models for subagents.
+
+**Why does it offer to write agent files?**
+Most assistants (Cursor, OpenCode, Codex, Kilo Code, Antigravity, Oh My Pi) only let you set a subagent's model in an agent file. super-system offers to write three: `super-system-top`, `-mid` and `-cheap`. It asks first.
+
+**My assistant has no subagents. Does it still work?**
+Yes. It runs the roles one after another in the same session, and review stays a separate pass over the diff.
+
+**Can I use it for backend-only work?**
+Yes. Backend tasks run the backend track only, with no prototypes, no browser QA and no UI dependencies required.
+
+**Will updating wipe my settings?**
+No. Settings live in `~/.super-system/config.json`, outside the skill folder.
+
+**Isn't two gates slow?**
+Gate 1 takes a minute to pick a direction. Gate 2 takes a minute to read a plan. Either way, it's less time than undoing work you didn't ask for.
+
+---
+
+## Roadmap
+
+**v2.0.0**
+- Five flows, two dials, UI and backend tracks
+- Per-assistant settings and model slots
+- Install via `npx skills`
+
+**Next**
+- Check that a `DESIGN.md` covering several page types has a clear library path
+- Stricter reference checks in `tests/check_skill.py`
+
+---
 
 ## Development
 
@@ -123,8 +248,36 @@ On other assistants, `full` uses your `top` slot everywhere. `normal` uses `mid`
 python tests/check_skill.py
 ```
 
-This checks that SKILL.md stays under 8KB, that no personal paths or IDs are present, that model names appear only in `references/platforms.md`, that no references are broken, and that the contrast checker's self-test passes.
+This checks that SKILL.md stays under 8KB, that no personal paths or IDs are present, that model names appear only in `references/platforms.md`, that each rule is stated once, that no references are broken, and that the contrast checker's self-test passes.
+
+---
+
+## Star History
+
+<p align="center">
+  <a href="https://star-history.com/#glambz/super-system&Date">
+    <img src="https://api.star-history.com/svg?repos=glambz/super-system&type=Date" alt="Star history chart for glambz/super-system" width="600">
+  </a>
+</p>
+
+## Contributors
+
+<p align="center">
+  <a href="https://github.com/glambz/super-system/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=glambz/super-system" alt="Contributors to glambz/super-system">
+  </a>
+</p>
+
+Issues and pull requests are welcome. Run `python tests/check_skill.py` before opening one.
+
+<hr>
+<p align="center"><em>The best code is the code you approved.<br>The second best is the code someone else checked.</em></p>
+<hr>
+
+## Disclaimer
+
+The only official source is [github.com/glambz/super-system](https://github.com/glambz/super-system). Skills run with your agent's full permissions, so read any skill before you install it, this one included.
 
 ## License
 
-MIT
+[MIT](LICENSE)
