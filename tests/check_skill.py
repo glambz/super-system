@@ -29,6 +29,14 @@ REQUIRED_PHRASES = {
         "Gate 2", "reviewer", "references/platforms.md", "references/flows/",
         "references/track-ui.md", "references/track-backend.md", "Definition of done",
     ],
+    "references/track-ui.md": [
+        "never silently erase", "tasteFile", "designLibrary", "1440", "390", "44px",
+        "prefers-reduced-motion",
+    ],
+    "references/track-backend.md": ["never prod", "ADR"],
+    "references/design-md-template.md": [
+        "[Measured]", "[Observed]", "[Inferred]", "[Decided]", "superdesign:",
+    ],
 }
 
 
