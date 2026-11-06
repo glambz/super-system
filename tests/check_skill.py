@@ -22,7 +22,14 @@ MODEL_NAMES = re.compile(r"\b(Opus|Sonnet|Haiku|Argon|Flash)\b")
 MODELS_ALLOWED_IN = "references/platforms.md"
 
 # path relative to SKILL_DIR -> phrases that must appear (case-insensitive).
-REQUIRED_PHRASES = {}
+REQUIRED_PHRASES = {
+    "SKILL.md": [
+        "~/.super-system/config.json", "--workflow", "--models", "If unsure, ask",
+        "first-run", "never overwrite other platforms", "this run only", "Gate 1",
+        "Gate 2", "reviewer", "references/platforms.md", "references/flows/",
+        "references/track-ui.md", "references/track-backend.md", "Definition of done",
+    ],
+}
 
 
 def skill_files():
