@@ -12,6 +12,7 @@ You are the **orchestrator**. You run the flow, own both gates and every spec/pl
 1. **Platform.** Detect which assistant you are running in (signals in `references/platforms.md`). If unsure, ask.
 2. **Settings.** Read `~/.super-system/config.json`. If the file is missing or has no entry for this platform, do first-run setup for this platform only:
    - Platform without built-in defaults in `references/platforms.md`: ask which models are available, map them to slots `top` / `mid` / `cheap`, each with a reasoning effort.
+   - Set up subagent dispatch as `references/platforms.md` describes for this platform (it may offer to write slot agent files; ask first).
    - Ask for workflow mode and model mode.
    - Write only this platform's entry; never overwrite other platforms' entries or the top-level fields. If the file is not valid JSON, show the error and ask before replacing it.
 3. **Overrides.** `--workflow` / `--models` (or plain words: "economy models this time") apply to this run only. At the end of the run, ask once whether to save them as this platform's default.
@@ -71,7 +72,7 @@ A reviewer's slot is never below the slot of the implementer it checks.
 
 Mechanical task = rename, moving code without changing it, boilerplate that copies an existing pattern exactly, config value edits.
 
-Slot defaults per platform and how to spawn a subagent with a model and effort: `references/platforms.md`. If the platform has no subagents or no per-subagent model choice, run the roles one after another in this session; review stays a separate pass that re-reads the diff fresh.
+Slot defaults per platform and how to spawn a subagent with a model and effort: `references/platforms.md`. A platform's own role table there overrides this one. If the platform has no subagents or no per-subagent model choice, run the roles one after another in this session; review stays a separate pass that re-reads the diff fresh.
 
 ## Dependencies
 
