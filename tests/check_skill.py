@@ -84,7 +84,10 @@ REQUIRED_PHRASES = {
     "references/roles/reviewer.md": [
         "scratch folder", "never edit project files", "not_checked", "references/schemas/reviewer.json", "never dispatch",
     ],
-    "../../README.md": ["Flash · high", "cheap for mechanical tasks", "reported"],
+    "../../README.md": [
+        "Flash · high", "cheap for mechanical tasks", "reported", "--platforms", '"platforms": "mixed"', "agy",
+        "codex exec", "--dangerously-skip-permissions", "~/.super-system/runs/", "can run any command",
+    ],
 }
 
 

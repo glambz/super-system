@@ -11,6 +11,7 @@
 
 **Plans with your best model. Builds with the model you can afford.**
 **Two human gates. A reviewer for every implementer. A final audit that doesn't take "looks fine" for an answer.**
+**Mix assistants: plan in one, build in another, review in a third.**
 **A workflow, not a prompt.**
 
 **Claude Code · Antigravity · Cursor · OpenCode · Oh My Pi · Codex · Kilo Code**
@@ -31,6 +32,7 @@
 | **Scope** | "While I was in there, I also refactored…" | Only what you approved at **Gate 2** changes |
 | **Review** | The agent that wrote the code says it's done | A separate reviewer runs the tests, reads the diff, and can reject |
 | **Cost** | One model for everything | Best model plans and audits; cheaper models implement, by your choice |
+| **Quota** | One subscription's limits cap the whole job | Roles spread across the assistants you already pay for (platform mode) |
 | **UI** | Pastel gradients and three cards in a row | Real prototypes, browser QA at 1440 / 768 / 390, accessibility checks |
 | **Backend** | Tests "should pass" | Tests shown passing, migrations run on a copy, security and N+1 checks |
 | **Done** | "Looks good!" | A definition-of-done checklist; anything unverified is listed as unverified |
@@ -71,6 +73,18 @@ mklink /J %USERPROFILE%\.gemini\config\skills\super-system %USERPROFILE%\.agents
 
 Cursor and OpenCode also read `~/.claude/skills/`, so they may list the skill twice. It's the same files, so nothing conflicts.
 
+### Mixed mode prerequisites (optional)
+
+Only needed if you route roles to other assistants ([platform mode](#platform-mode)). Each assistant you route to needs its CLI installed and signed in on the same machine:
+
+| Runner | Install | Sign in |
+|---|---|---|
+| Antigravity (`agy`) | the official installer from [antigravity.google](https://antigravity.google/docs/install?tab=cli) | run `agy` once interactively; headless runs reuse that login |
+| Codex (`codex exec`) | [Codex CLI](https://learn.chatgpt.com/docs/non-interactive-mode) | your usual Codex login or provider key in `~/.codex/config.toml` (custom providers work) |
+| Claude Code (`claude -p`) | [Claude Code](https://code.claude.com/docs) | run `claude` once and log in |
+
+> **Warning:** routed agents run with their skip-all-permissions flags (`--dangerously-skip-permissions` for `agy` and `claude`, `--dangerously-bypass-approvals-and-sandbox` for Codex), so they never stop to ask. That means they can run any command on your machine. Use `mixed` only on projects and machines where you accept that.
+
 ---
 
 ## What it does
@@ -102,10 +116,11 @@ Each flow runs a UI track, a backend track, or both, picked from the task and th
 
 ## Modes
 
-Two dials, set separately. Each is `full`, `normal` or `economy`.
+Three dials, set separately. Workflow and model mode are `full`, `normal` or `economy`; platform mode is `native` or `mixed`.
 
 - **Workflow mode:** how much work gets done (options explored, review frequency, audit depth).
 - **Model mode:** which models the subagents run on.
+- **Platform mode:** which assistant each subagent runs on.
 
 | Workflow | full | normal | economy |
 |---|---|---|---|
@@ -121,13 +136,33 @@ Two dials, set separately. Each is `full`, `normal` or `economy`.
 
 Antigravity can't set reasoning per subagent; for "Flash · high", set the conversation's thinking level to High. On other assistants, the first run asks which models you have and maps them to `top` / `mid` / `cheap`. Then `full` uses `top`, and `normal` uses `mid`. `economy` uses `cheap` for scouts and `mid` for implementers (cheap for mechanical tasks) and reviewers.
 
-Your choice is saved per assistant. Override it for one run:
+### Platform mode
+
+`native` (the default) runs every subagent inside the assistant you're chatting with. `mixed` sends each role to the assistant you pick, through its headless CLI, while the one you chat with stays the orchestrator: it plans, runs both gates and does the final audit.
+
+| Role | Example route | Runs as |
+|---|---|---|
+| scout | `native` | a subagent of the chat assistant |
+| implementer | `antigravity` | `agy -p …` in the background |
+| reviewer | `codex` | `codex exec …` in the background |
+
+- **Models follow the dials.** Model mode still picks `top` / `mid` / `cheap` for each role, and that slot is looked up on the assistant that runs the role. The first `mixed` run reads what each CLI is actually set to (a Codex pointed at another provider stays on that provider) and asks you to confirm the slots.
+- **Done means checked.** A run counts as done only when its own answer says so, its result matches the role's format, its changed files match the task, and no permission or quota error shows in its logs. An exit code alone never counts.
+- **Bounded loops.** At most 3 review rounds per task and 2 final-audit rounds. After that you get the open problems and decide: another round, or pass.
+- **No time limit, but no silent hangs.** Agents run as long as they need. One that prints nothing for 15 minutes (`stallMinutes`) is reported to you with a recommendation.
+- **Always asks.** A blocked agent, a missing CLI, a used-up quota or a stall stops that work and comes to you with a recommendation. The orchestrator never quietly does the work itself.
+- **Parallel only when safe.** Gate 2 asks whether subagents run concurrently or one at a time; concurrent tasks never share files.
+- **Nothing added to your project.** Briefs, logs and answers go to `~/.super-system/runs/<project>-<date-time>/`.
+
+Verified with Claude Code as the orchestrator. Other orchestrators can use `mixed` if they can run a shell command in the background; the skill tells you when that isn't verified.
+
+Your choices are saved per assistant. Override them for one run:
 
 ```bash
-/super-system build --workflow full --models economy
+/super-system build --workflow full --models economy --platforms native
 ```
 
-**`super-system · Claude Code · flow: build · workflow: full · models: economy · tracks: ui+backend`**
+**`super-system · Claude Code · flow: build · workflow: full · models: normal · platforms: mixed (scout: native · implementer: antigravity/<model>·high · reviewer: codex/<model>·high) · tracks: ui+backend`**
 
 At the end of an overridden run, it asks once whether to keep the override as the new default.
 
@@ -149,8 +184,28 @@ Saved in `~/.super-system/config.json`. Reinstalling or updating the skill never
 ```json
 {
   "platforms": {
-    "claude-code": { "workflow": "full", "models": "normal" },
-    "antigravity": { "workflow": "full", "models": "economy" },
+    "claude-code": {
+      "workflow": "full", "models": "normal",
+      "platforms": "mixed",
+      "roles": { "scout": "native", "implementer": "antigravity", "reviewer": "codex" }
+    },
+    "antigravity": {
+      "workflow": "full", "models": "economy",
+      "cli": {
+        "top":   { "model": "<slug from agy models>", "effort": "high" },
+        "mid":   { "model": "<slug from agy models>", "effort": "high" },
+        "cheap": { "model": "<slug from agy models>", "effort": "high" },
+        "tools": ["browser"]
+      }
+    },
+    "codex": {
+      "cli": {
+        "top":   { "model": "<model from ~/.codex/config.toml>", "effort": "high" },
+        "mid":   { "model": "<model from ~/.codex/config.toml>", "effort": "high" },
+        "cheap": { "model": "<model from ~/.codex/config.toml>", "effort": "medium" },
+        "tools": []
+      }
+    },
     "cursor": {
       "workflow": "normal",
       "models": "normal",
@@ -162,10 +217,14 @@ Saved in `~/.super-system/config.json`. Reinstalling or updating the skill never
     }
   },
   "tasteFile": null,
-  "designLibrary": null
+  "designLibrary": null,
+  "stallMinutes": 15
 }
 ```
 
+- **`platforms` / `roles`:** platform mode for this assistant, and where each role runs when it's `mixed`. A role left out runs `native`.
+- **`cli`:** the models used when this assistant runs as someone else's runner, plus `tools` (`browser`, `superdesign`) it can use headless. Steps that need a missing tool run natively and the status line says so. An entry with only `cli` is fine.
+- **`stallMinutes`:** minutes without output before a subagent is reported as stuck. Default 15.
 - **`tasteFile`:** optional path to your own taste and anti-slop notes, read before any design work.
 - **`designLibrary`:** optional folder of `DESIGN.md` prior art. `build` and `change` copy UI designs there for later sessions, and `inspect` writes there. The default is `./design-library/` in the project.
 
@@ -224,12 +283,22 @@ Yes. Backend tasks run the backend track only, with no prototypes, no browser QA
 **Will updating wipe my settings?**
 No. Settings live in `~/.super-system/config.json`, outside the skill folder.
 
+**Can I mix assistants, say Claude Code planning, Antigravity building and Codex reviewing?**
+Yes, with `"platforms": "mixed"` and a `roles` map. Each role runs through that assistant's own CLI, so it uses that assistant's subscription and quota. See [Platform mode](#platform-mode).
+
+**Is skipping permissions safe?**
+Only as safe as the machine and project you run it on. Routed agents can run any command without asking; that's what keeps an hour-long implementation from stalling on a prompt nobody sees. Use `native` when that isn't acceptable.
+
 **Isn't two gates slow?**
 Gate 1 takes a minute to pick a direction. Gate 2 takes a minute to read a plan. Either way, it's less time than undoing work you didn't ask for.
 
 ---
 
 ## Roadmap
+
+**v2.1.0**
+- Platform mode: route scouts, implementers and reviewers to other assistants' CLIs
+- Round caps, stall reports and a Gate 2 concurrency choice for every subagent
 
 **v2.0.0**
 - Five flows, two dials, UI and backend tracks
