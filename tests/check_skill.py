@@ -48,6 +48,8 @@ REQUIRED_PHRASES = {
         "--platforms", "references/modes.md", "references/runners.md", "references/roles/",
         "3 review rounds", "2 final-audit rounds", "accepted by the user", "concurrently or one at a time",
         "file sets don't overlap", "stallMinutes", "stall check wasn't available",
+        "in every platform mode", "never kill a running agent", "after the earlier task's loop ends",
+        "reopened tasks get fresh review rounds",
     ],
     "references/modes.md": [
         "platform mode", "native", "mixed", "generic role table", "cli", "runner-only entry", "never below",
@@ -55,9 +57,9 @@ REQUIRED_PHRASES = {
     ],
     "references/track-ui.md": [
         "never silently erase", "tasteFile", "designLibrary", "1440", "390", "44px",
-        "prefers-reduced-motion", "refresh means merge", "<skill-dir>/scripts/contrast-check.py",
+        "prefers-reduced-motion", "refresh means merge", "<skill-dir>/scripts/contrast-check.py", "references/modes.md",
     ],
-    "references/track-backend.md": ["never prod", "ADR"],
+    "references/track-backend.md": ["never prod", "ADR", "references/modes.md"],
     "references/design-md-template.md": [
         "[Measured]", "[Observed]", "[Inferred]", "[Decided]", "superdesign:", "history:",
     ],
@@ -70,19 +72,21 @@ REQUIRED_PHRASES = {
     ],
     "references/flows/inspect.md": ["every label in every mode"],
     "references/flows/build.md": ["chosen at Gate 2", "shared runtime resources"],
-    "references/track-ui.md": ["references/modes.md"],
-    "references/track-backend.md": ["references/modes.md"],
     "references/runners.md": [
         "references/modes.md", "~/.super-system/runs/", "agy models", "model_provider", "ask the user to confirm", "cli.tools",
         "agy -p", "codex exec", "claude -p", "--dangerously-skip-permissions",
         "--dangerously-bypass-approvals-and-sandbox", "--conversation", "codex exec resume", "--json-schema",
         "--output-schema", "soft deny", "exit code alone", "trigger word", "never switch the role to native",
         "stallMinutes", "references/roles/", "references/schemas/",
+        "git stash create", "git diff <base>", "requires a git repository", "`files_changed` matches",
+        "file paths are exempt", "codex exec resume <id> -m <model>", "--conversation <id> --model",
+        "-r <session_id> --model", "apply to every run", "`platforms` follows the override rule",
+        "outside that union",
     ],
-    "references/roles/scout.md": ["read-only", "evidence", "references/schemas/scout.json", "never dispatch"],
-    "references/roles/implementer.md": ["files allowed", "blocked", "references/schemas/implementer.json", "never dispatch"],
+    "references/roles/scout.md": ["read-only", "evidence", "references/schemas/scout.json", "never dispatch", "never load or run that skill"],
+    "references/roles/implementer.md": ["files allowed", "blocked", "references/schemas/implementer.json", "never dispatch", "never load or run that skill"],
     "references/roles/reviewer.md": [
-        "scratch folder", "never edit project files", "not_checked", "references/schemas/reviewer.json", "never dispatch",
+        "scratch folder", "never edit project files", "not yours to judge", "never load or run that skill", "not_checked", "references/schemas/reviewer.json", "never dispatch",
     ],
     "../../README.md": [
         "Flash · high", "cheap for mechanical tasks", "reported", "--platforms", '"platforms": "mixed"', "agy",
@@ -242,6 +246,18 @@ def check_stale():
     return fails
 
 
+def check_no_duplicate_phrase_keys():
+    """A dict literal silently keeps the last duplicate key; that once disabled the track-file phrases."""
+    import ast
+    tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and any(getattr(t, "id", None) == "REQUIRED_PHRASES" for t in node.targets):
+            keys = [k.value for k in node.value.keys]
+            dups = sorted({k for k in keys if keys.count(k) > 1})
+            return [f"REQUIRED_PHRASES has duplicate keys {dups}"] if dups else []
+    return ["REQUIRED_PHRASES not found"]
+
+
 def check_role_files():
     roles = SKILL_DIR / "references" / "roles"
     if not roles.is_dir():
@@ -256,7 +272,8 @@ def check_role_files():
 def main():
     fails = []
     for check in (check_frontmatter, check_size, check_banned, check_models_only_in_platforms,
-                  check_refs, check_phrases, check_once, check_contrast, check_schemas, check_role_files, check_stale):
+                  check_refs, check_phrases, check_once, check_contrast, check_schemas, check_role_files, check_stale,
+                  check_no_duplicate_phrase_keys):
         fails += check()
     for f in fails:
         print(f"FAIL: {f}")
