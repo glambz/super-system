@@ -57,6 +57,11 @@ REQUIRED_PHRASES = {
         "Config key:** `kilo-code`", "folder-only match",
     ],
     "references/flows/inspect.md": ["every label in every mode"],
+    "references/roles/scout.md": ["read-only", "evidence", "references/schemas/scout.json", "never dispatch"],
+    "references/roles/implementer.md": ["files allowed", "blocked", "references/schemas/implementer.json", "never dispatch"],
+    "references/roles/reviewer.md": [
+        "scratch folder", "never edit project files", "not_checked", "references/schemas/reviewer.json", "never dispatch",
+    ],
     "../../README.md": ["Flash · high", "cheap for mechanical tasks", "reported"],
 }
 
@@ -195,10 +200,24 @@ def check_schemas():
     return fails
 
 
+TRIGGER_WORDS = ("super-system", "supersystem")  # role files must not start the orchestrator (spec 2026-11-09 §6.3)
+
+
+def check_role_files():
+    roles = SKILL_DIR / "references" / "roles"
+    if not roles.is_dir():
+        return ["references/roles/ missing"]
+    fails = []
+    for p in roles.glob("*.md"):
+        text = p.read_text(encoding="utf-8").lower()
+        fails += [f"{rel(p)}: contains trigger word {w!r}" for w in TRIGGER_WORDS if w in text]
+    return fails
+
+
 def main():
     fails = []
     for check in (check_frontmatter, check_size, check_banned, check_models_only_in_platforms,
-                  check_refs, check_phrases, check_once, check_contrast, check_schemas):
+                  check_refs, check_phrases, check_once, check_contrast, check_schemas, check_role_files):
         fails += check()
     for f in fails:
         print(f"FAIL: {f}")
