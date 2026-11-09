@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "implementer result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "summary", "files_changed", "tests_run", "blocker"],
+  "properties": {
+    "status": { "type": "string", "enum": ["done", "blocked", "failed"], "description": "done = task finished and its test passes; blocked = needs an answer from the user; failed = could not finish" },
+    "summary": { "type": "string", "description": "What was changed and why, specific (files, functions)" },
+    "files_changed": { "type": "array", "items": { "type": "string" }, "description": "Project-relative paths of every file created, edited or deleted" },
+    "tests_run": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["command", "result"],
+      "properties": {
+        "command": { "type": "string" },
+        "result": { "type": "string", "description": "The actual output summary, e.g. '12 passed'" }
+      },
+      "description": "null only when blocked before any test could run"
+    },
+    "blocker": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["question", "tried"],
+      "properties": {
+        "question": { "type": "string", "description": "The question for the user, with your recommendation" },
+        "tried": { "type": "string", "description": "What you checked or attempted before stopping" }
+      },
+      "description": "Required when status is blocked or failed; null when done"
+    }
+  }
+}

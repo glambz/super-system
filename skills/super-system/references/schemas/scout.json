@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "scout result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["findings", "open_questions", "not_checked"],
+  "properties": {
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["claim", "evidence"],
+        "properties": {
+          "claim": { "type": "string" },
+          "evidence": { "type": "string", "description": "file:line, command and its output, or URL with the measured value" }
+        }
+      }
+    },
+    "open_questions": { "type": "array", "items": { "type": "string" } },
+    "not_checked": { "type": "array", "items": { "type": "string" } }
+  }
+}

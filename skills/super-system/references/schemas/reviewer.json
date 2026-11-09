@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "reviewer result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["verdict", "tests_run", "findings", "not_checked"],
+  "properties": {
+    "verdict": { "type": "string", "enum": ["pass", "fail"] },
+    "tests_run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "result"],
+      "properties": {
+        "command": { "type": "string" },
+        "result": { "type": "string", "description": "The actual output summary, e.g. '12 passed, 1 failed'" }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["file", "line", "severity", "root_cause", "fix_instruction"],
+        "properties": {
+          "file": { "type": "string" },
+          "line": { "type": ["integer", "null"] },
+          "severity": { "type": "string", "enum": ["critical", "important", "minor"] },
+          "root_cause": { "type": "string", "description": "Why it is wrong, with evidence" },
+          "fix_instruction": { "type": "string", "description": "What the implementer must change" }
+        }
+      }
+    },
+    "not_checked": { "type": "array", "items": { "type": "string" }, "description": "Lenses or areas you could not check, and why" }
+  }
+}

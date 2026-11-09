@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Guard the skill's anti-goals. Run from the repo root: python tests/check_skill.py"""
 
+import json
 import re
 import subprocess
 import sys
@@ -147,10 +148,57 @@ def check_contrast():
     return [] if r.returncode == 0 else [f"contrast selftest failed: {r.stdout.strip()}"]
 
 
+# role -> (exact top-level required fields, (enum field, values) or None). Spec 2026-11-09 §7.
+SCHEMAS = {
+    "implementer": (["status", "summary", "files_changed", "tests_run", "blocker"], ("status", ["done", "blocked", "failed"])),
+    "reviewer": (["verdict", "tests_run", "findings", "not_checked"], ("verdict", ["pass", "fail"])),
+    "scout": (["findings", "open_questions", "not_checked"], None),
+}
+
+
+def _strict_objects(node, where, fails):
+    """Strict structured-output rules: every object closes additionalProperties and requires all properties."""
+    if isinstance(node, dict):
+        t = node.get("type")
+        if t == "object" or (isinstance(t, list) and "object" in t):
+            if node.get("additionalProperties") is not False:
+                fails.append(f"{where}: object without additionalProperties: false")
+            if set(node.get("required", [])) != set(node.get("properties", {})):
+                fails.append(f"{where}: required != properties")
+        for k, v in node.items():
+            _strict_objects(v, f"{where}.{k}", fails)
+    elif isinstance(node, list):
+        for i, v in enumerate(node):
+            _strict_objects(v, f"{where}[{i}]", fails)
+
+
+def check_schemas():
+    fails = []
+    for role, (fields, enum) in SCHEMAS.items():
+        path = f"references/schemas/{role}.json"
+        f = SKILL_DIR / path
+        if not f.is_file():
+            fails.append(f"{path} missing")
+            continue
+        try:
+            schema = json.loads(f.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as e:
+            fails.append(f"{path}: invalid JSON ({e})")
+            continue
+        if schema.get("type") != "object":
+            fails.append(f"{path}: top-level type is not object")
+        if sorted(schema.get("required", [])) != sorted(fields):
+            fails.append(f"{path}: required is {schema.get('required')}, expected {fields}")
+        if enum and schema.get("properties", {}).get(enum[0], {}).get("enum") != enum[1]:
+            fails.append(f"{path}: {enum[0]} enum is not {enum[1]}")
+        _strict_objects(schema, path, fails)
+    return fails
+
+
 def main():
     fails = []
     for check in (check_frontmatter, check_size, check_banned, check_models_only_in_platforms,
-                  check_refs, check_phrases, check_once, check_contrast):
+                  check_refs, check_phrases, check_once, check_contrast, check_schemas):
         fails += check()
     for f in fails:
         print(f"FAIL: {f}")
