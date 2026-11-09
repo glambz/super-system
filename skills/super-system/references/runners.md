@@ -1,6 +1,6 @@
 # Runners (platform mode `mixed`)
 
-How to run a role on another assistant's headless CLI. Read this when platform mode is `mixed` (rules: "Modes" in SKILL.md). Flags were checked against official docs and installed CLIs on 2026-11-09; CLIs change, so when a flag fails, read the CLI's `--help`, tell the user, and fix this file.
+How to run a role on another assistant's headless CLI. Read this when platform mode is `mixed` (rules in `references/modes.md`, "Platform mode"). Flags were checked against official docs and installed CLIs on 2026-11-09; CLIs change, so when a flag fails, read the CLI's `--help`, tell the user, and fix this file.
 
 ## Setup
 
@@ -48,7 +48,7 @@ A brief must stand on its own: the agent starts with no memory of this run.
 
 ## Commands
 
-Start every run in the background with no time limit: stdout goes to the `.jsonl` log, stderr to the `.err` log. Pass the role's model and effort from the runner's `cli` slot (slot choice: "Modes" in SKILL.md).
+Start every run in the background with no time limit: stdout goes to the `.jsonl` log, stderr to the `.err` log. Pass the role's model and effort from the runner's `cli` slot (slot choice: `references/modes.md`).
 
 Each runner runs with its skip-all-permissions flag: the user chose no permission prompts. The README warns that this lets the agent run any command.
 
@@ -102,7 +102,7 @@ Never decide from the exit code alone. When a run's process ends, check all of t
 
 Never kill or retry a run on your own. How to wait and watch on each orchestrator platform is in `references/platforms.md`.
 
-**Blockers.** Any of these stops the affected work:
+**Blockers.** For runners, these count as blockers under "Loops, stalls, blockers" in SKILL.md:
 - an implementer returns `blocked` or `failed`;
 - a CLI is missing or signed out;
 - a permission refusal;
@@ -111,7 +111,7 @@ Never kill or retry a run on your own. How to wait and watch on each orchestrato
 - a stall;
 - a round cap reached.
 
-Work that isn't affected keeps running. Tell the user what happened, what is left, and your recommendation, then wait for the answer. Never do the work yourself, and never switch the role to native, without the user's answer.
+Work that isn't affected keeps running. Never switch the role to native without the user's answer.
 
 ## Missing tools
 

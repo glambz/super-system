@@ -30,6 +30,8 @@ ONCE = [
     r"console errors",
     r"write the minimum|minimum that passes",
     r"soft deny",
+    r"3 review rounds",
+    r"2 final-audit rounds",
 ]
 
 # path relative to SKILL_DIR -> phrases that must appear (case-insensitive).
@@ -43,6 +45,13 @@ REQUIRED_PHRASES = {
         "saved `slots` override", "used if installed",
         "## Conduct", "every subagent brief", "ask when unclear", "no hallucination",
         "no unsupported conclusions", "include it with its reason",
+        "--platforms", "references/modes.md", "references/runners.md", "references/roles/",
+        "3 review rounds", "2 final-audit rounds", "accepted by the user", "concurrently or one at a time",
+        "file sets don't overlap", "stallMinutes", "stall check wasn't available",
+    ],
+    "references/modes.md": [
+        "platform mode", "native", "mixed", "generic role table", "cli", "runner-only entry", "never below",
+        "root-cause instructions", "mechanical task",
     ],
     "references/track-ui.md": [
         "never silently erase", "tasteFile", "designLibrary", "1440", "390", "44px",
@@ -59,7 +68,7 @@ REQUIRED_PHRASES = {
     ],
     "references/flows/inspect.md": ["every label in every mode"],
     "references/runners.md": [
-        "~/.super-system/runs/", "agy models", "model_provider", "ask the user to confirm", "cli.tools",
+        "references/modes.md", "~/.super-system/runs/", "agy models", "model_provider", "ask the user to confirm", "cli.tools",
         "agy -p", "codex exec", "claude -p", "--dangerously-skip-permissions",
         "--dangerously-bypass-approvals-and-sandbox", "--conversation", "codex exec resume", "--json-schema",
         "--output-schema", "soft deny", "exit code alone", "trigger word", "never switch the role to native",
