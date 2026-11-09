@@ -23,7 +23,7 @@ Match styling density to what the screen is for:
 
 ## Explore options
 
-- How many options: the workflow-mode table in SKILL.md.
+- How many options: the workflow-mode table in `references/modes.md`.
 - Each option is an interactive HTML/CSS draft at desktop 1440×900 and mobile 390×844, with a rationale naming the requirement or existing UX weakness it solves.
 - Options must differ in substance (layout model, density, type, motion), not just color.
 - Upload each draft to SuperDesign: find the installed SuperDesign tool or CLI (for example `superdesign_import_design_draft` or `superdesign create-design-draft`), create or reuse one project per product, import, confirm it renders, and record the canvas URL, node URLs (`?node=…`) and preview URL. Screenshots are evidence for you, never the deliverable.

@@ -8,7 +8,7 @@ Read the existing architecture, data model, API conventions, test setup and how 
 
 ## Explore options
 
-- How many options: the workflow-mode table in SKILL.md.
+- How many options: the workflow-mode table in `references/modes.md`.
 - Each option states: what it is (API shape, schema, or architecture), how it fits the existing code, its tradeoffs (complexity, migration risk, performance, operability), and what it rules out later.
 - End with a recommendation and the reason for it.
 
@@ -32,7 +32,7 @@ Code follows the spec; when the code must diverge, update the spec in the same t
 
 ## Verify
 
-- Run the test suite (scope per the workflow-mode table in SKILL.md).
+- Run the test suite (scope per the workflow-mode table in `references/modes.md`).
 - Contract and integration tests against real dependencies where the project already has them (containers, test database).
 - Run migrations against a copy (local or test database), never prod; run down migrations too when they exist.
 

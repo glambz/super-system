@@ -4,9 +4,9 @@ How to detect each platform, which models fill the `top` / `mid` / `cheap` slots
 
 ## Slot agents (most platforms)
 
-Most platforms only let you choose a subagent's model in an **agent definition file**, not at spawn time. On those platforms, first-run setup offers to write three agent files, `super-system-top`, `super-system-mid` and `super-system-cheap`, in the platform's global agents folder (listed per platform below). Each holds only the model, the reasoning effort and one instruction line: "You are a super-system subagent. Follow the role and task in your prompt exactly." Ask the user before writing them, and rewrite them only when the user changes slots. To dispatch a role, spawn the slot agent that the role table in SKILL.md picks and put the role (scout / implementer / reviewer) and the task in the prompt.
+Most platforms only let you choose a subagent's model in an **agent definition file**, not at spawn time. On those platforms, first-run setup offers to write three agent files, `super-system-top`, `super-system-mid` and `super-system-cheap`, in the platform's global agents folder (listed per platform below). Each holds only the model, the reasoning effort and one instruction line: "You are a subagent. Follow the role file and task in your prompt exactly." Ask the user before writing them, and rewrite them only when the user changes slots. Slot agent files written by an older version have a line that names this skill; the next time setup touches them, ask, then rewrite them with the line above. To dispatch a role, spawn the slot agent that the role table in `references/modes.md` picks, and put the role file from `references/roles/` and the task in the prompt.
 
-If a platform can't run subagents at all, or the user declines the slot agents, use the single-agent fallback from SKILL.md.
+If a platform can't run subagents at all, or the user declines the slot agents, use the single-agent fallback in `references/modes.md`.
 
 ## Claude Code
 
@@ -30,7 +30,7 @@ If a platform can't run subagents at all, or the user declines the slot agents, 
 - **Config key:** `antigravity`
 - **Detect:** `invoke_subagent` tool exists. Tie-breakers: `~/.gemini/config/` folder, `agy` CLI.
 - **Spawn:** `invoke_subagent` on a slot agent. Agent files go in `~/.gemini/config/agents/<name>.md`; frontmatter `model:` accepts only `inherit` | `flash` | `pro`.
-- **Effort:** not settable per subagent. Thinking level (Low / Medium / High) is a conversation setting; for "Flash · high" ask the user to set High.
+- **Effort:** not settable per subagent (the `agy` CLI does take `--effort` per run; see `references/runners.md`). Thinking level (Low / Medium / High) is a conversation setting; for "Flash · high" ask the user to set High.
 - **Installed skills:** listed in your context each turn.
 - **Default slots:** top = `inherit` (the chat model, e.g. Gemini 4 Argon), mid = `flash`, cheap = `flash`.
 - **Default role models:**
@@ -93,6 +93,12 @@ In normal the reviewer stays on the chat model while scouts and implementers use
 ## Any other platform
 
 Ask the user for a short kebab-case config key, then: does it support subagents, and how is a subagent's model chosen (per call, or in an agent file, and where)? Then use per-call selection, slot agents, or the single-agent fallback, in that order of preference. Ask for the available models and fill the slots.
+
+## Waiting on runners (platform mode `mixed`)
+
+How the orchestrator starts routed runs in the background, learns they ended, and runs the stall check (`references/runners.md`):
+- **Claude Code** (verified): start each runner with the Bash tool's `run_in_background`; you are notified when it exits. For the stall check, watch the log files' size (the Monitor tool, or a check between other work) against `stallMinutes`.
+- **Every other platform:** not verified. Use `mixed` only if the platform can start a shell command in the background and read its logs later; otherwise tell the user and run `native`.
 
 ## Telling platforms apart
 

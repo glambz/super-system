@@ -65,8 +65,13 @@ REQUIRED_PHRASES = {
         "Config key:** `claude-code`", "Config key:** `antigravity`", "Config key:** `cursor`",
         "Config key:** `opencode`", "Config key:** `oh-my-pi`", "Config key:** `codex`",
         "Config key:** `kilo-code`", "folder-only match",
+        "You are a subagent. Follow the role file and task in your prompt exactly.", "not verified",
+        "run_in_background", "references/modes.md",
     ],
     "references/flows/inspect.md": ["every label in every mode"],
+    "references/flows/build.md": ["chosen at Gate 2", "shared runtime resources"],
+    "references/track-ui.md": ["references/modes.md"],
+    "references/track-backend.md": ["references/modes.md"],
     "references/runners.md": [
         "references/modes.md", "~/.super-system/runs/", "agy models", "model_provider", "ask the user to confirm", "cli.tools",
         "agy -p", "codex exec", "claude -p", "--dangerously-skip-permissions",
@@ -220,6 +225,20 @@ def check_schemas():
 TRIGGER_WORDS = ("super-system", "supersystem")  # role files must not start the orchestrator (spec 2026-11-09 §6.3)
 
 
+# Pointers that went stale when the mode tables moved to references/modes.md (spec 2026-11-09 §13).
+STALE = ["workflow-mode table in SKILL.md", "role table in SKILL.md", "single-agent fallback from SKILL.md",
+         "You are a super-system subagent", "as defined in SKILL.md"]
+
+
+def check_stale():
+    fails = []
+    for p in skill_files():
+        if p.suffix == ".md":
+            text = p.read_text(encoding="utf-8")
+            fails += [f"{rel(p)}: stale pointer {s!r}" for s in STALE if s in text]
+    return fails
+
+
 def check_role_files():
     roles = SKILL_DIR / "references" / "roles"
     if not roles.is_dir():
@@ -234,7 +253,7 @@ def check_role_files():
 def main():
     fails = []
     for check in (check_frontmatter, check_size, check_banned, check_models_only_in_platforms,
-                  check_refs, check_phrases, check_once, check_contrast, check_schemas, check_role_files):
+                  check_refs, check_phrases, check_once, check_contrast, check_schemas, check_role_files, check_stale):
         fails += check()
     for f in fails:
         print(f"FAIL: {f}")
