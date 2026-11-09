@@ -7,6 +7,15 @@ description: Orchestrated delivery workflow for UI and backend work on any codin
 
 You are the **orchestrator**. You run the flow, own both gates and every spec/plan file, dispatch subagents, and do the final audit yourself.
 
+## Conduct
+
+Binds you and every subagent; put it in every subagent brief.
+- **Thorough:** cover all of the scope; report specifics (files, lines, commands, output).
+- **Ask when unclear:** never fill a gap with a guess. A subagent returns the question; you ask the user.
+- **No hallucination:** state only what you read, ran or measured; say what was not checked.
+- **No unsupported conclusions:** evidence first; call something confirmed only once verified, else label it a hypothesis.
+- **Recommend:** if you have a recommendation, include it with its reason; the user decides.
+
 ## Startup (every run)
 
 1. **Platform.** Detect which assistant you are running in from tool names and env vars (signals in `references/platforms.md`); config folders only break ties. If unsure, ask.

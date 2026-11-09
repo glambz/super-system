@@ -39,6 +39,8 @@ REQUIRED_PHRASES = {
         "references/track-ui.md", "references/track-backend.md", "Definition of done",
         "missing or incomplete", "config.json.bak", "never replace it", "config folders only break ties",
         "saved `slots` override", "used if installed",
+        "## Conduct", "every subagent brief", "ask when unclear", "no hallucination",
+        "no unsupported conclusions", "include it with its reason",
     ],
     "references/track-ui.md": [
         "never silently erase", "tasteFile", "designLibrary", "1440", "390", "44px",
