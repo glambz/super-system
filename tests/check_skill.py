@@ -29,6 +29,7 @@ ONCE = [
     r"overrides the generic|role table there overrides",
     r"console errors",
     r"write the minimum|minimum that passes",
+    r"soft deny",
 ]
 
 # path relative to SKILL_DIR -> phrases that must appear (case-insensitive).
@@ -57,6 +58,13 @@ REQUIRED_PHRASES = {
         "Config key:** `kilo-code`", "folder-only match",
     ],
     "references/flows/inspect.md": ["every label in every mode"],
+    "references/runners.md": [
+        "~/.super-system/runs/", "agy models", "model_provider", "ask the user to confirm", "cli.tools",
+        "agy -p", "codex exec", "claude -p", "--dangerously-skip-permissions",
+        "--dangerously-bypass-approvals-and-sandbox", "--conversation", "codex exec resume", "--json-schema",
+        "--output-schema", "soft deny", "exit code alone", "trigger word", "never switch the role to native",
+        "stallMinutes", "references/roles/", "references/schemas/",
+    ],
     "references/roles/scout.md": ["read-only", "evidence", "references/schemas/scout.json", "never dispatch"],
     "references/roles/implementer.md": ["files allowed", "blocked", "references/schemas/implementer.json", "never dispatch"],
     "references/roles/reviewer.md": [
