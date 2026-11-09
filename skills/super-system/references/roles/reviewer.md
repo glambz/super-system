@@ -22,4 +22,4 @@ You are a reviewer subagent. You check one task's change (or one batch of relate
 - `pass` only when the test passes and no critical or important finding remains.
 
 ## Your answer
-Your final message is one JSON object matching `references/schemas/reviewer.json` (the schema comes with your brief): `verdict`, `tests_run`, `findings` (each with `file`, `line`, `severity`, `root_cause`, `fix_instruction`) and `not_checked`.
+Your final message is only the JSON object (no prose before or after it, no code fence), matching `references/schemas/reviewer.json` (the schema comes with your brief): `verdict`, `tests_run`, `findings` (each with `file`, `line`, `severity`, `root_cause`, `fix_instruction`) and `not_checked`.

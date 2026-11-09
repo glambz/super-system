@@ -38,7 +38,7 @@ A brief is the role file from `references/roles/` (its full text) followed by th
 - for a reviewer, the review command `git diff <base> -- <files allowed>` and the new files among them (see "Baseline");
 - the quality lenses, copied from the active track file;
 - the scratch folder path;
-- the result schema from `references/schemas/`.
+- the schema's full text, pasted from `references/schemas/<role>.json`, with: "Your final message is only the JSON object: no prose, no code fence." Pass the schema file to the CLI's schema flag as well, but don't rely on it: with a custom provider the flag may be not enforced (the smoke test on 2026-11-09 found Codex with a non-default provider ignored `--output-schema`, and the agent couldn't see the file).
 
 A brief must stand on its own: the agent starts with no memory of this run.
 
@@ -50,7 +50,7 @@ A brief must stand on its own: the agent starts with no memory of this run.
 
 ## Commands
 
-Start every run in the background with no time limit: stdout goes to the `.jsonl` log, stderr to the `.err` log. Pass the role's model and effort from the runner's `cli` slot (slot choice: `references/modes.md`).
+Start every run in the background with no time limit: stdout goes to the `.jsonl` log, stderr to the `.err` log. Close stdin on every run (`< /dev/null` in a POSIX shell, `< NUL` in cmd): `codex exec` given a prompt argument with an open stdin waits to read more input and never starts (smoke test, 2026-11-09). Pass the role's model and effort from the runner's `cli` slot (slot choice: `references/modes.md`).
 
 Each runner runs with its skip-all-permissions flag: the user chose no permission prompts. The README warns that this lets the agent run any command.
 
@@ -58,7 +58,7 @@ Each runner runs with its skip-all-permissions flag: the user chose no permissio
 - **Check:** `agy --version`. Headless runs reuse the login from one interactive `agy` session; without one, the run exits with "authentication required".
 - **Run:** from the project folder (there is no `--cd` flag):
   `agy -p "<prompt>" --model <slug> --effort <level> --dangerously-skip-permissions --output-format stream-json --json-schema <schema file> --add-dir <run folder>`
-- **Answer:** the stream's `result` event, with `status`, `response`, `structured_output` and `conversation_id`. Save `structured_output` as the result file.
+- **Answer:** each stream line is shaped `{"event": "<name>", "<name>": {…}}` (events `init`, `step_update`, `result`). The last line is `{"event": "result", "result": {…}}`, holding `status`, `response`, `structured_output` and `conversation_id`. Save `structured_output` as the result file.
 - **Resume:** from the project folder, `agy -p "<prompt>" --conversation <id> --model <slug> --effort <level> --dangerously-skip-permissions --output-format stream-json --json-schema <schema file> --add-dir <run folder>`.
 
 **Codex (`codex exec`)**
@@ -84,10 +84,10 @@ Never decide from the exit code alone. When a run's process ends, check all of t
 
 1. **Exit status:** the exit code and the CLI's own status.
    - `agy`: `status` is `SUCCESS`.
-   - Codex: a `turn.completed` event, and no `turn.failed` or `error` event.
+   - Codex: a `turn.completed` event, and no top-level `turn.failed` or `error` event. An `item.completed` whose item is of type `error` is a warning (for example missing model metadata): list it in the report, don't fail the run for it.
    - Claude: `is_error` is false.
 2. **The `.err` log:** look for permission notices, quota or rate-limit errors, and auth errors. In headless mode `agy` turns a refused approval into a soft deny: the run continues and still exits 0.
-3. **The answer:** the result file exists and matches the role's schema.
+3. **The answer:** the result file exists and matches the role's schema. If the agent wrapped the JSON in prose or a code fence, take the one JSON object out of it first, then check it. Still no valid object: a blocker.
 4. **What the agent says:**
    - implementer: `status` is `done`;
    - reviewer: `verdict` is set and every finding is complete;
@@ -101,6 +101,7 @@ Never decide from the exit code alone. When a run's process ends, check all of t
 **Stall.** A run counts as stalled when its logs haven't grown for `stallMinutes` (config, default 15). Then:
 1. Read the last events and check the process is still alive.
 2. Report to the user: which agent, how long since its last output, what it was doing, and your recommendation (wait longer, or stop and retry).
+3. If the user says stop: stop the CLI process itself, found by its command line. On Windows, stopping the shell that started it leaves the CLI running.
 
 How to wait and watch on each orchestrator platform is in `references/platforms.md`.
 

@@ -82,11 +82,13 @@ REQUIRED_PHRASES = {
         "file paths are exempt", "codex exec resume <id> -m <model>", "--conversation <id> --model",
         "-r <session_id> --model", "apply to every run", "`platforms` follows the override rule",
         "outside that union",
+        "close stdin", "< /dev/null", '{"event": "result", "result"', "stopping the shell that started it",
+        "the schema's full text", "code fence", "not enforced", "is of type `error`",
     ],
-    "references/roles/scout.md": ["read-only", "evidence", "references/schemas/scout.json", "never dispatch", "never load or run that skill"],
-    "references/roles/implementer.md": ["files allowed", "blocked", "references/schemas/implementer.json", "never dispatch", "never load or run that skill"],
+    "references/roles/scout.md": ["read-only", "evidence", "references/schemas/scout.json", "only the JSON object", "never dispatch", "never load or run that skill"],
+    "references/roles/implementer.md": ["files allowed", "blocked", "references/schemas/implementer.json", "only the JSON object", "never dispatch", "never load or run that skill"],
     "references/roles/reviewer.md": [
-        "scratch folder", "never edit project files", "not yours to judge", "never load or run that skill", "not_checked", "references/schemas/reviewer.json", "never dispatch",
+        "scratch folder", "never edit project files", "not yours to judge", "never load or run that skill", "not_checked", "references/schemas/reviewer.json", "only the JSON object", "never dispatch",
     ],
     "../../README.md": [
         "Flash · high", "cheap for mechanical tasks", "reported", "--platforms", '"platforms": "mixed"', "agy",
