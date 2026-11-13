@@ -36,6 +36,8 @@ A brief is the role file from `references/roles/` (its full text) followed by th
 - the files allowed to change;
 - the interface the task produces or consumes;
 - the test command, naming the exact interpreter/toolchain path when the project uses one (never a bare `python` or `node`);
+- a **hard constraints** block: known-failing tests that must stay failing (list them by running the suite once on the base before Gate 2), shared files or helpers the task must not change, repo-enforced budgets/checks and the approved way to meet them, and the interpreter/toolchain path;
+- the plan file's `## Decisions during the run` section (briefs point to it; reviewers judge against it);
 - for a reviewer, the review command `git diff <base> -- <files allowed>` and the new files among them (see "Baseline");
 - the quality lenses, copied from the active track file;
 - the **technique cards** pasted in full (never rely on a skill being installed in the runner; where the runner has the matching skill installed, the card may name it as further reading, never naming the orchestrator's own skill):
@@ -86,8 +88,10 @@ Each runner runs with its skip-all-permissions flag: the user chose no permissio
 ## Run scripts
 
 - Copy any runner or queue scripts into the run folder at the start of a run; never edit a script while a process is executing it (bash reads scripts incrementally) — write a new versioned copy instead.
+- Shipped helper scripts live in `scripts/` (`_lib.sh`, `run-agy.sh`, `run-codex.sh`, `review-wrap.sh`, `queue.sh`, `wait-done.sh`, `removed-checks.py`, `worktree-setup.sh`, `worktree-cleanup.sh`); copy all of `scripts/` that the run uses (including `_lib.sh`) to the run folder at the start of a run and run the copies.
 - Write briefs and scripts with the file-writing tool, never shell heredocs (quoting breaks, especially on Windows).
 - Cap concurrent runs per runner at `cli.concurrency` (default 3; custom-provider Codex: 3) and queue runs above the cap. On a 429 rate-limit error: wait 300 s and retry at most 3 times; repeated 429s across runs → stop and report (the quota window may be exhausted).
+- **Quota-aware scheduling:** before launching `N` runs on a runner, estimate `N × typical run length` against `cli.concurrency` and its provider window (optional `cli.window_hours` in config). If it won't fit, tell the user and propose staggering or deferring.
 - Judge results by content (schema-valid JSON with the role's required fields), never by file size or exit code alone.
 
 ## Is it done?
@@ -107,6 +111,16 @@ Never decide from the exit code or file size alone. When a run's process ends, c
 5. **The files** (see "Baseline"):
    - The implementer: its changes are `git diff --name-only <base>` plus untracked files that weren't in the recorded list. All must be inside its files allowed, and `files_changed` matches that list (and is not empty for `done`); a `files_changed` mismatch alone → fix round, not a blocker. When tasks run concurrently, a change inside another running task's files allowed belongs to that task; a change outside the union of running tasks' files allowed is a scope violation.
    - The reviewer: hash the reviewed task's files before and after; they must be unchanged. A new untracked file outside that union counts against the reviewer.
+   - **Base-diff guard:** before dispatching the reviewer, run `scripts/removed-checks.py <worktree> <base> <files…>` and pass its list of removed permission, visibility, validation, or error lines to the reviewer, who must confirm each is safe or reject.
+
+## Parallel tasks in worktrees
+
+- Create one worktree per concurrent task from the base branch (`scripts/worktree-setup.sh`).
+- Copy the git-ignored env files that tests need into each worktree.
+- Link dependency folders instead of copying them (for example a `node_modules` directory junction on Windows, symlink elsewhere).
+- Put absolute worktree paths in every brief (agents' working directories drift).
+- **Merge order and conflicts:** merge completed, reviewed tasks back in plan/dependency order; on a conflict, stop and resolve or ask the user before continuing, and re-run tests after merging.
+- **Cleanup:** run `scripts/worktree-cleanup.sh`. Unlink dependency links first (without following them), then remove worktrees and prune — worktrees hold copies of env secrets.
 
 ## Stalls and blockers
 

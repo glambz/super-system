@@ -44,3 +44,8 @@ A **runner-only entry** is a platform entry that has only `cli`. It is complete 
 Where `mixed` works: it is verified with Claude Code as the orchestrator. Another orchestrator platform can use it only if it can start a shell command in the background and read its logs later; `references/platforms.md` marks those as not verified. If it can't, tell the user `mixed` isn't supported here and run `native`.
 
 Setup, commands, briefs and done checks for routed roles: `references/runners.md`.
+
+## Fix rounds and minor triage
+
+- **Fix-round size:** each fix round carries at most 3 `critical` or `important` findings. When more are open, ask the user: split across rounds (they count toward the round cap) or re-plan the task (it is probably too big).
+- **Minor triage:** `minor` findings never go into a fix round on their own. When a review passes with minors, decide once per task: accept them (recorded as accepted minors) or schedule them for one **polish round** at the end of the run (all tasks' chosen minors, grouped by file ownership, reviewed like any round). Never open a new round per minor after a pass.

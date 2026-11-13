@@ -7,3 +7,5 @@ Redesign or refactor existing code. Same steps as `build.md`, with these differe
 - **Plan:** aim for the smallest working diff; prefer deleting and reusing over adding. Keep every behavior outside the approved scope exactly as it was, and say how that is tested. When a change touches both tracks, include the Gate 2 contract-first split decision (frozen `docs/design/api/<feature>.md` + integration check, or backend-first then frontend) from `build.md`.
 - **Existing decisions win:** the project's stack and the user's earlier choices override generic defaults from this skill or its dependencies.
 - **Verify** includes the routes/endpoints next to the change, to catch regressions in what was supposed to stay the same.
+- **Decision log:** include `## Decisions during the run` in the plan file and append every orchestrator decision made after Gate 2 (date, decision, reason).
+- **Documentation and instruction files:** keep every pre-existing sentence untouched unless the spec requires changing it; the reviewer lists every changed pre-existing sentence and flags unrequested changes as findings.

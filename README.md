@@ -300,6 +300,14 @@ Gate 1 takes a minute to pick a direction. Gate 2 takes a minute to read a plan.
 
 ## Roadmap
 
+### What's new in v3.1
+
+1. **Fix-round cap & minor triage**: fix rounds carry at most 3 Critical/Important findings; minors never trigger a fix round on their own and are either accepted (recorded in `retro.md` and surfaced at Gate 1/2 on the next run) or batched into one end-of-run polish round.
+2. **Hard constraints & decision log**: every brief includes a hard-constraints block (known-failing base tests, shared files not to touch, repo budgets, interpreter path) and points to the plan's `## Decisions during the run` log.
+3. **Tested runner & worktree scripts (`scripts/`)**: `run-agy.sh`, `run-codex.sh`, `review-wrap.sh`, `queue.sh`, `wait-done.sh`, `removed-checks.py` (base-diff guard), `worktree-setup.sh`, and `worktree-cleanup.sh`, plus quota-aware scheduling (`cli.window_hours`) and a parallel worktree recipe.
+4. **Review flow verifier & severity rubric**: fresh verifier (`scout` role) re-reads cited lines, checks cheap reproductions, marks duplicates in a findings register, and applies `references/severity.md`; the orchestrator samples all criticals plus at least 1 in 5 of the rest.
+5. **Stricter backend & docs checks**: read-only pre-deploy SQL data checks, worked numeric/money examples verified through real functions by script, and sentence-level diff checks on documentation changes.
+
 ### What's new in v3
 
 1. **Technique cards in briefs** (`references/techniques/`): short, self-contained cards for Ponytail, TDD, debugging, verification, backend security, UI quality and contracts pasted directly into briefs so routed agents never miss a skill.

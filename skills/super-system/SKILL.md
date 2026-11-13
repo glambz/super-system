@@ -21,7 +21,7 @@ Binds you and every subagent; put it in every subagent brief.
 1. **Platform.** Detect which assistant you are running in from tool names and env vars (signals in `references/platforms.md`); config folders only break ties. If unsure, ask.
 2. **Settings.** Read `~/.super-system/config.json`, using the platform's config key from `references/platforms.md`: `workflow`, `models`, `platforms`, `roles`. Saved `slots` override the defaults there. If the file is missing, or this platform's entry is missing or incomplete (no `workflow` or `models`, or no `slots` on a platform without built-in defaults), do first-run setup for this platform only, as `references/platforms.md` describes (First-run setup).
 3. **Overrides.** `--workflow` / `--models` / `--platforms` (or plain words: "economy models this time") apply to this run only. At the end of the run, ask once whether to save them as this platform's default.
-4. **Tracks and lessons.** From the task and the codebase decide `ui`, `backend` or `ui+backend`. Read `~/.super-system/lessons.md` (if present) and apply its active rules in briefs and plans.
+4. **Tracks and lessons.** From the task and the codebase decide `ui`, `backend` or `ui+backend`. Read `~/.super-system/lessons.md` (if present) and apply its active rules in briefs and plans. Show prior accepted minors (`references/retrospective.md`).
 5. **Dependencies.** Check core always, UI only on the `ui` track (see Dependencies). Installable but missing: stop, name it, show the README's install command. No version for this platform: continue and say so in the status line.
 6. **Status line.** Print it, then go:
    `super-system · <Platform> · flow: <flow> · workflow: <mode> · models: <mode | n/a — single agent> · platforms: <native | mixed (role: platform/model·effort, …)> · tracks: <tracks>`
@@ -59,6 +59,7 @@ These apply to every subagent, native or routed.
 - At most 3 review rounds per task and 2 final-audit rounds. The final audit runs once all tasks are through review; reopened tasks get fresh review rounds. At a cap, stop that loop and report the open deficiencies with evidence and a recommendation; the user decides: another round, or pass.
 - Stall: output that hasn't grown for `stallMinutes` (config, default 15) is reported to the user with a recommendation; never kill a running agent. Native subagents are checked only where the platform shows progress; otherwise the report says the stall check wasn't available for them.
 - Blocker (a subagent blocked or failed, a missing or signed-out CLI, quota, a stall, a cap): pause that work; tell the user what happened, what is left, and your recommendation, then wait. Never do a subagent's work yourself instead.
+- Fix-round size and minor triage: `references/modes.md`.
 
 ## Dependencies
 

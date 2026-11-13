@@ -35,6 +35,8 @@ Code follows the spec; when the code must diverge, update the spec in the same t
 - Run the test suite (scope per the workflow-mode table in `references/modes.md`).
 - Contract and integration tests against real dependencies where the project already has them (containers, test database).
 - Run migrations against a copy (local or test database), never prod; run down migrations too when they exist.
+- **Pre-deploy data checks:** when a change adds migrations or changes data rules, write read-only SQL checks from the plan (rows affected, values that change meaning, test data) and run them against the dev/test database before merging; report the results; never write.
+- **Numeric rules:** when a task implements money or numeric rules, include worked examples in the plan and compute them through the real functions with a script.
 
 ## Quality lenses
 

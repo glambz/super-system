@@ -53,18 +53,23 @@ REQUIRED_PHRASES = {
         "~/.super-system/lessons.md", "## Retrospective", "retro.md", "contract-first",
         "references/retrospective.md", "technique cards", "references/techniques/",
         "brainstorming", "test-driven-development", "systematic-debugging", "verification-before-completion",
+        "accepted minors",
     ],
     "references/modes.md": [
         "platform mode", "native", "mixed", "generic role table", "cli", "runner-only entry", "never below",
         "root-cause instructions", "mechanical task",
         "keyed by track", "cli.tools",
+        "fix-round size", "polish round", "accepted minors",
     ],
     "references/track-ui.md": [
         "never silently erase", "tasteFile", "designLibrary", "1440", "390", "44px",
         "prefers-reduced-motion", "refresh means merge", "<skill-dir>/scripts/contrast-check.py", "references/modes.md",
         "docs/design/api/", "contract",
     ],
-    "references/track-backend.md": ["never prod", "ADR", "references/modes.md", "docs/design/api/", "contract"],
+    "references/track-backend.md": [
+        "never prod", "ADR", "references/modes.md", "docs/design/api/", "contract",
+        "pre-deploy data checks", "read-only sql", "numeric rules",
+    ],
     "references/design-md-template.md": [
         "[Measured]", "[Observed]", "[Inferred]", "[Decided]", "superdesign:", "history:",
     ],
@@ -80,12 +85,21 @@ REQUIRED_PHRASES = {
     "references/retrospective.md": [
         "## Retrospective", "retro.md", "~/.super-system/lessons.md",
         "## End-of-run report", "never edit the skill without the user's approval",
+        "accepted minors", "<project-name>-*",
+    ],
+    "references/severity.md": [
+        "critical", "important", "minor", "latent issues", "exploitable without auth",
     ],
     "references/flows/inspect.md": ["every label in every mode", "Retrospective"],
-    "references/flows/review.md": ["Retrospective"],
-    "references/flows/build.md": ["chosen at Gate 2", "shared runtime resources", "docs/design/api/", "contract", "integration check"],
-    "references/flows/change.md": ["contract"],
-    "references/flows/fix.md": ["contract", "regression_checks"],
+    "references/flows/review.md": [
+        "Retrospective", "references/severity.md", "verifier", "findings register", "1 in 5",
+    ],
+    "references/flows/build.md": [
+        "chosen at Gate 2", "shared runtime resources", "docs/design/api/", "contract", "integration check",
+        "decisions during the run",
+    ],
+    "references/flows/change.md": ["contract", "decisions during the run", "changed pre-existing sentence"],
+    "references/flows/fix.md": ["contract", "regression_checks", "decisions during the run"],
     "references/runners.md": [
         "references/modes.md", "~/.super-system/runs/", "agy models", "model_provider", "ask the user to confirm", "cli.tools",
         "agy -p", "codex exec", "claude -p", "--dangerously-skip-permissions",
@@ -104,17 +118,21 @@ REQUIRED_PHRASES = {
         "references/techniques/ui-quality.md", "references/techniques/contract.md",
         "ponytail", "test-driven-development", "systematic-debugging", "verification-before-completion", "security-and-hardening",
         "may be empty",
+        "## Parallel tasks in worktrees", "quota-aware scheduling", "hard constraints",
+        "known-failing tests", "scripts/removed-checks.py", "scripts/worktree-cleanup.sh",
+        "decisions during the run", "cli.window_hours", "_lib.sh",
     ],
     "references/roles/scout.md": ["read-only", "evidence", "references/schemas/scout.json", "only the JSON object", "never dispatch", "never load or run that skill"],
     "references/roles/implementer.md": ["files allowed", "blocked", "references/schemas/implementer.json", "only the JSON object", "never dispatch", "never load or run that skill", "red_evidence", "no_test_reason", "may be empty"],
     "references/roles/reviewer.md": [
         "scratch folder", "never edit project files", "not yours to judge", "never load or run that skill", "not_checked", "references/schemas/reviewer.json", "only the JSON object", "never dispatch", "regression_checks",
+        "changed pre-existing sentence", "worked examples", "references/severity.md",
     ],
     "references/techniques/security-backend.md": ["security-and-hardening", "run lessons"],
     "../../README.md": [
         "Flash · high", "cheap for mechanical tasks", "reported", "--platforms", '"platforms": "mixed"', "agy",
         "codex exec", "--dangerously-skip-permissions", "~/.super-system/runs/", "can run any command",
-        "What's new in v3", "concurrency", "keyed by track",
+        "What's new in v3", "What's new in v3.1", "concurrency", "keyed by track",
     ],
 }
 
@@ -168,7 +186,7 @@ def check_models_only_in_platforms():
 
 def check_refs():
     fails = []
-    pattern = re.compile(r"(?:references|scripts)/[\w./-]+\.(?:md|py)")
+    pattern = re.compile(r"(?:references|scripts)/[\w./-]+\.(?:md|py|sh)")
     for p in skill_files():
         for ref in set(pattern.findall(p.read_text(encoding="utf-8", errors="replace"))):
             if not (SKILL_DIR / ref).is_file():

@@ -10,6 +10,7 @@ A new feature or a new project. Runs the whole backbone. The `change` flow reuse
    - **Contract:** written by the orchestrator before Gate 2 approval at `docs/design/api/<feature>.md` (routes, request/response, status codes, error shapes, shared type names + file), frozen at Gate 2.
    - **Backend task:** owns backend files and shared type definitions assigned by the contract.
    - **Frontend task:** owns UI files; codes against the contract and mocks the API. (Both run concurrently when file sets don't overlap.)
+   - **Decision log:** give the plan file a `## Decisions during the run` section; append every orchestrator decision made after Gate 2 (date, decision, reason) so briefs point to it and reviewers judge against it.
 6. **Gate 2.** Approve the task breakdown, frozen contracts, split choices, and concurrency mode.
 7. **Implement + review.** Dispatch implementers on their slot. Send each output (or each batch, in economy) to a reviewer, as defined in `references/modes.md`, applying the track's "Quality lenses". Run tasks concurrently only if chosen at Gate 2. For split features, after both tracks merge, run an **integration check**: a reviewer with a browser tests the real UI against the real API plus end-to-end tests; mismatches go back as fix rounds.
 8. **Verify.** Each active track's "Verify" section, at the scope the workflow mode sets.
