@@ -168,6 +168,22 @@ def check_removed_checks_functional():
             fails.append(f"removed-checks.py: did not report 'app.py:3:' with 'raise HTTPException'; got: {out!r}")
         if "x = 1 + 1" in out:
             fails.append(f"removed-checks.py: reported unrelated removed line 'x = 1 + 1'; got: {out!r}")
+
+        # git quotes non-ASCII names and tab-terminates names with spaces in diff headers.
+        odd = repo / "café x.py"
+        odd.write_text("def f(u):\n    if not u:\n        raise HTTPException(403)\n", encoding="utf-8")
+        _git(repo, "add", "café x.py")
+        _git(repo, "commit", "-m", "odd name")
+        odd.write_text("def f(u):\n    return u\n", encoding="utf-8")
+        r = subprocess.run(
+            [sys.executable, str(script), str(repo), "HEAD", "café x.py"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+        )
+        if "café x.py:3:" not in r.stdout:
+            fails.append(f"removed-checks.py: did not name the non-ASCII/space path 'café x.py:3:'; got: {r.stdout!r} {r.stderr!r}")
     return fails
 
 

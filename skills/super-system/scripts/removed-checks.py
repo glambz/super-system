@@ -8,6 +8,7 @@ Usage:
     python removed-checks.py <worktree> <base> [files...]
 """
 
+import ast
 import os
 import re
 import subprocess
@@ -20,6 +21,14 @@ CHECK_RE = re.compile(
     re.IGNORECASE,
 )
 HUNK_RE = re.compile(r"^@@ -(\d+)(?:,\d+)? \+")
+
+
+def header_path(raw):
+    """Path from a ---/+++ header: git C-quotes unusual names and tab-terminates names with spaces."""
+    raw = raw.rstrip("\t")
+    if raw.startswith('"'):
+        raw = ast.literal_eval("b" + raw).decode("utf-8", "replace")
+    return raw[2:]  # drop the a/ or b/ prefix
 
 
 def main(argv):
@@ -44,10 +53,8 @@ def main(argv):
     for line in proc.stdout.splitlines():
         if line.startswith("diff --git "):
             current_file = ""
-        elif line.startswith("--- a/"):
-            current_file = line[6:]
-        elif line.startswith("+++ b/"):
-            current_file = line[6:]
+        elif line.startswith(("--- a/", "+++ b/", '--- "a/', '+++ "b/')):
+            current_file = header_path(line[4:])
         elif line.startswith("@@ "):
             m = HUNK_RE.match(line)
             old_line = int(m.group(1)) if m else 0

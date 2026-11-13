@@ -1,0 +1,3 @@
+# Scripts must keep LF endings: bash (and python shebangs) fail on CRLF, e.g. on Windows checkouts with core.autocrlf=true.
+*.sh text eol=lf
+*.py text eol=lf
