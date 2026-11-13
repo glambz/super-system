@@ -187,7 +187,11 @@ Saved in `~/.super-system/config.json`. Reinstalling or updating the skill never
     "claude-code": {
       "workflow": "full", "models": "normal",
       "platforms": "mixed",
-      "roles": { "scout": "native", "implementer": "antigravity", "reviewer": "codex" }
+      "roles": {
+        "scout": "native",
+        "implementer": { "backend": "antigravity", "ui": "antigravity" },
+        "reviewer": "codex"
+      }
     },
     "antigravity": {
       "workflow": "full", "models": "economy",
@@ -222,8 +226,8 @@ Saved in `~/.super-system/config.json`. Reinstalling or updating the skill never
 }
 ```
 
-- **`platforms` / `roles`:** platform mode for this assistant, and where each role runs when it's `mixed`. A role left out runs `native`.
-- **`cli`:** the models used when this assistant runs as someone else's runner, plus `tools` (`browser`, `superdesign`) it can use headless. Steps that need a missing tool run natively and the status line says so. An entry with only `cli` is fine.
+- **`platforms` / `roles`:** platform mode for this assistant, and where each role runs when it's `mixed`. A `roles` value can be a single platform string or an object keyed by track (`backend`, `ui`); a missing role or track runs `native`.
+- **`cli`:** the models used when this assistant runs as someone else's runner, `tools` (`browser`, `superdesign`) it can use headless, and optional `concurrency` (per-runner cap, default 3). Steps that need a missing tool run natively and the status line says so. An entry with only `cli` is fine.
 - **`stallMinutes`:** minutes without output before a subagent is reported as stuck. Default 15.
 - **`tasteFile`:** optional path to your own taste and anti-slop notes, read before any design work.
 - **`designLibrary`:** optional folder of `DESIGN.md` prior art. `build` and `change` copy UI designs there for later sessions, and `inspect` writes there. The default is `./design-library/` in the project.
@@ -295,6 +299,15 @@ Gate 1 takes a minute to pick a direction. Gate 2 takes a minute to read a plan.
 ---
 
 ## Roadmap
+
+### What's new in v3
+
+1. **Technique cards in briefs** (`references/techniques/`): short, self-contained cards for Ponytail, TDD, debugging, verification, backend security, UI quality and contracts pasted directly into briefs so routed agents never miss a skill.
+2. **Red evidence & stronger done checks**: implementers report `red_evidence` (failing base run before the fix, or `no_test_reason` for docs/config) and list removed checks; reviewers verify `regression_checks` in `fix` and must return a parsed `verdict`; Antigravity background-wait `ERROR` with valid `structured_output` is treated as a warning with reviewer re-test.
+3. **Run hygiene**: scripts copied into the run folder and never edited mid-run; briefs/scripts written with file tools instead of shell heredocs; per-runner `cli.concurrency` cap and 429 retry policy; content-based result checks.
+4. **Per-track routing & contract-first split**: `roles` can map per track (`backend` / `ui`), and dual-track features can freeze `docs/design/api/<feature>.md` at Gate 2 so backend and mocked-API frontend run concurrently before a browser integration check.
+5. **Retrospective & durable lessons**: every run writes `retro.md` with skill-improvement proposals (applied only on user approval) and appends durable lessons to `~/.super-system/lessons.md`, read at startup.
+6. **Runner skill setup**: setup checks role helper skills on routed runners and warns if the orchestrator skill itself is installed where routed runners load skills.
 
 **v2.1.0**
 - Platform mode: route scouts, implementers and reviewers to other assistants' CLIs

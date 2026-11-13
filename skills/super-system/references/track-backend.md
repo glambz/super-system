@@ -15,7 +15,7 @@ Read the existing architecture, data model, API conventions, test setup and how 
 ## Spec artifact
 
 Source of truth lives in the project under `docs/design/`, in whichever form fits:
-- **API contract:** the project's existing format (e.g. OpenAPI); create one only if the change adds or alters an API.
+- **API contract:** `docs/design/api/<feature>.md` for features split across tracks at Gate 2 (routes, request/response bodies, status codes, error shapes, shared type names and their file), or the project's existing format (e.g. OpenAPI); create one only if the change adds or alters an API. Backend tasks own backend files and any shared type definitions the contract assigns to them, and must satisfy the contract verbatim. Any contract change goes back to the orchestrator.
 - **Schema doc:** tables or collections touched, migrations, and backfill plan.
 - **ADR:** `docs/design/adr/NNNN-<title>.md` with context, decision, consequences, for decisions a future reader would otherwise have to reverse-engineer.
 

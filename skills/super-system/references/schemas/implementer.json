@@ -3,7 +3,7 @@
   "title": "implementer result",
   "type": "object",
   "additionalProperties": false,
-  "required": ["status", "summary", "files_changed", "tests_run", "blocker"],
+  "required": ["status", "summary", "files_changed", "tests_run", "blocker", "red_evidence", "no_test_reason"],
   "properties": {
     "status": { "type": "string", "enum": ["done", "blocked", "failed"], "description": "done = task finished and its test passes; blocked = needs an answer from the user; failed = could not finish" },
     "summary": { "type": "string", "description": "What was changed and why, specific (files, functions)" },
@@ -17,6 +17,24 @@
         "result": { "type": "string", "description": "The actual output summary, e.g. '12 passed'" }
       },
       "description": "null only when blocked before any test could run"
+    },
+    "red_evidence": {
+      "type": "array",
+      "description": "Failing test runs observed on the base code before implementing the fix; empty only with non-null no_test_reason when the brief says no test is needed",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["test", "command", "failing_output"],
+        "properties": {
+          "test": { "type": "string" },
+          "command": { "type": "string" },
+          "failing_output": { "type": "string", "description": "Output excerpt (<= 2,000 characters) showing the failure" }
+        }
+      }
+    },
+    "no_test_reason": {
+      "type": ["string", "null"],
+      "description": "Reason no test was needed (only when the brief says docs/config need no test); null otherwise"
     },
     "blocker": {
       "type": ["object", "null"],

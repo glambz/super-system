@@ -13,8 +13,9 @@ Run on the first `mixed` run on this platform, or when a routed platform has no 
    - Antigravity: `agy models`.
    - Claude Code: the aliases in `references/platforms.md`.
 4. Propose `cli.top`, `cli.mid`, `cli.cheap` (model and effort each) and ask the user to confirm or correct them.
-5. Ask whether that CLI can drive a browser and use SuperDesign. Save what it has as `cli.tools` (for example `["browser", "superdesign"]`, or `[]`).
-6. Save `roles` on this platform's entry and `cli` on each runner's entry; write only those fields. `platforms` follows the override rule in SKILL.md: a `--platforms mixed` run asks at its end whether to save it.
+5. Ask whether that CLI can drive a browser and use SuperDesign. Save what it has as `cli.tools` (for example `["browser", "superdesign"]`, or `[]`). Optionally set `cli.concurrency` (default 3; custom-provider Codex: 3).
+6. Check runner skills: verify whether each routed runner has the role-relevant helper skills installed (`ponytail`, `test-driven-development`, `systematic-debugging`, `verification-before-completion`, `security-and-hardening`; plus `web-design-guidelines`, `modern-web-guidance`, `design-taste-frontend` for UI) and offer to install missing ones by copying from the user's installed copies (the technique cards remain the source of truth). Also check that the orchestrator's own skill is not installed where routed runners load skills (`references/platforms.md`); if it is, recommend moving it.
+7. Save `roles` on this platform's entry and `cli` on each runner's entry; write only those fields. `platforms` follows the override rule in SKILL.md: a `--platforms mixed` run asks at its end whether to save it.
 
 ## Run folder
 
@@ -34,9 +35,13 @@ A brief is the role file from `references/roles/` (its full text) followed by th
 - the goal;
 - the files allowed to change;
 - the interface the task produces or consumes;
-- the test command;
+- the test command, naming the exact interpreter/toolchain path when the project uses one (never a bare `python` or `node`);
 - for a reviewer, the review command `git diff <base> -- <files allowed>` and the new files among them (see "Baseline");
 - the quality lenses, copied from the active track file;
+- the **technique cards** pasted in full (never rely on a skill being installed in the runner; where the runner has the matching skill installed, the card may name it as further reading, never naming the orchestrator's own skill):
+  - implementer: `references/techniques/ponytail.md`, `references/techniques/tdd.md`, `references/techniques/verification.md` (+ `references/techniques/debugging.md` in `fix`; + `references/techniques/security-backend.md` on `backend`; + `references/techniques/ui-quality.md` on `ui`; + `references/techniques/contract.md` for a split feature);
+  - reviewer: the same cards, as review criteria;
+  - scout: `references/techniques/verification.md` (evidence only), + `references/techniques/debugging.md` in `fix`;
 - the scratch folder path;
 - the schema's full text, pasted from `references/schemas/<role>.json`, with: "Your final message is only the JSON object: no prose, no code fence." Pass the schema file to the CLI's schema flag as well, but don't rely on it: with a custom provider the flag may be not enforced (the smoke test on 2026-11-09 found Codex with a non-default provider ignored `--output-schema`, and the agent couldn't see the file).
 
@@ -78,22 +83,29 @@ Each runner runs with its skip-all-permissions flag: the user chose no permissio
 
 **Any other platform:** ask the user for its headless command and its model, effort, permission and output flags, and save them as that platform's runner entry. A platform with no headless mode can't take a routed role; say so.
 
+## Run scripts
+
+- Copy any runner or queue scripts into the run folder at the start of a run; never edit a script while a process is executing it (bash reads scripts incrementally) — write a new versioned copy instead.
+- Write briefs and scripts with the file-writing tool, never shell heredocs (quoting breaks, especially on Windows).
+- Cap concurrent runs per runner at `cli.concurrency` (default 3; custom-provider Codex: 3) and queue runs above the cap. On a 429 rate-limit error: wait 300 s and retry at most 3 times; repeated 429s across runs → stop and report (the quota window may be exhausted).
+- Judge results by content (schema-valid JSON with the role's required fields), never by file size or exit code alone.
+
 ## Is it done?
 
-Never decide from the exit code alone. When a run's process ends, check all of the following. Any failure means the run is not done: handle it under "Stalls and blockers", or as a review fail.
+Never decide from the exit code or file size alone. When a run's process ends, check all of the following. Any failure means the run is not done: handle it under "Stalls and blockers", or as a review fail.
 
 1. **Exit status:** the exit code and the CLI's own status.
-   - `agy`: `status` is `SUCCESS`.
+   - `agy`: `status` is `SUCCESS`. Status `ERROR` with a complete `structured_output` and stderr `"root agent idle; waiting for N background task(s) to finish"` is a warning, not a failure — record it and have the reviewer re-run the tests. Any other `ERROR` is a blocker.
    - Codex: a `turn.completed` event, and no top-level `turn.failed` or `error` event. An `item.completed` whose item is of type `error` is a warning (for example missing model metadata): list it in the report, don't fail the run for it.
    - Claude: `is_error` is false.
 2. **The `.err` log:** look for permission notices, quota or rate-limit errors, and auth errors. In headless mode `agy` turns a refused approval into a soft deny: the run continues and still exits 0.
 3. **The answer:** the result file exists and matches the role's schema. If the agent wrapped the JSON in prose or a code fence, take the one JSON object out of it first, then check it. Still no valid object: a blocker.
 4. **What the agent says:**
-   - implementer: `status` is `done`;
-   - reviewer: `verdict` is set and every finding is complete;
+   - implementer: `status` is `done`, and `red_evidence` is present and non-empty (unless `no_test_reason` is set because the brief explicitly says no test is needed; for `blocked` and `failed`, `red_evidence` may be empty);
+   - reviewer: `verdict` is set (`pass` or `fail`), every finding is complete, and `regression_checks` is populated in `fix`. A missing `verdict` (even with a non-empty result file) → rerun fresh once, then a blocker;
    - scout: every finding has evidence.
 5. **The files** (see "Baseline"):
-   - The implementer: its changes are `git diff --name-only <base>` plus untracked files that weren't in the recorded list. All must be inside its files allowed, and `files_changed` matches that list (and is not empty for `done`). When tasks run concurrently, a change inside another running task's files allowed belongs to that task; a change outside the union of running tasks' files allowed is a scope violation.
+   - The implementer: its changes are `git diff --name-only <base>` plus untracked files that weren't in the recorded list. All must be inside its files allowed, and `files_changed` matches that list (and is not empty for `done`); a `files_changed` mismatch alone → fix round, not a blocker. When tasks run concurrently, a change inside another running task's files allowed belongs to that task; a change outside the union of running tasks' files allowed is a scope violation.
    - The reviewer: hash the reviewed task's files before and after; they must be unchanged. A new untracked file outside that union counts against the reviewer.
 
 ## Stalls and blockers

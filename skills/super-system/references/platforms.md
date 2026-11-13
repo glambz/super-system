@@ -8,6 +8,13 @@ Most platforms only let you choose a subagent's model in an **agent definition f
 
 If a platform can't run subagents at all, or the user declines the slot agents, use the single-agent fallback in `references/modes.md`.
 
+## First-run setup
+
+When `~/.super-system/config.json` is missing or this platform's entry is missing or incomplete:
+- Fill the slots and set up subagent dispatch as `references/platforms.md` says for this platform (ask before writing any agent file).
+- Ask for workflow mode and model mode. Platform mode starts `native`; `mixed` setup is in `references/runners.md`.
+- Write only this platform's entry; never overwrite other platforms' entries or the top-level fields. If the file is not valid JSON, show the error, copy it to `config.json.bak`, and offer to fix the syntax in place; never replace it with a fresh file.
+
 ## Claude Code
 
 - **Config key:** `claude-code`
@@ -99,6 +106,14 @@ Ask the user for a short kebab-case config key, then: does it support subagents,
 How the orchestrator starts routed runs in the background, learns they ended, and runs the stall check (`references/runners.md`):
 - **Claude Code** (verified): start each runner with the Bash tool's `run_in_background`; you are notified when it exits. For the stall check, watch the log files' size (the Monitor tool, or a check between other work) against `stallMinutes`.
 - **Every other platform:** not verified. Use `mixed` only if the platform can start a shell command in the background and read its logs later; otherwise tell the user and run `native`.
+
+## Runner skill placement
+
+Where routed runners load skills from:
+- **Codex:** `~/.agents/skills`, project `.agents/skills`
+- **Antigravity:** `~/.gemini/skills`, `~/.gemini/config/skills`
+
+The orchestrator's own skill must not be installed in folders read by routed runners (`references/runners.md` checks this during setup and recommends moving it).
 
 ## Telling platforms apart
 

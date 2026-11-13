@@ -35,7 +35,7 @@ Slot defaults per platform and how to spawn a subagent with a model and effort: 
 ## Platform mode
 
 - **`native`** (default): every role runs as a subagent of the platform you are running on.
-- **`mixed`**: each role runs on the platform named in this platform's `roles` map (for example `"roles": {"scout": "native", "implementer": "antigravity", "reviewer": "codex"}`). A role missing from the map runs `native`.
+- **`mixed`**: each role runs on the platform named in this platform's `roles` map (for example `"roles": {"scout": "native", "implementer": "antigravity", "reviewer": "codex"}`). A `roles` value may also be an object keyed by track (for example `"implementer": {"backend": "antigravity", "ui": "antigravity"}`, `"reviewer": {"backend": "codex", "ui": "codex"}`). A missing role or missing track falls back to the string/default (`native`). UI tasks need a runner whose `cli.tools` includes `browser` (otherwise browser checks run `native`).
 
 For a role routed to another platform, use the generic role table above (not this platform's own table), then take that slot from the runner's `cli` slots (`cli.top`, `cli.mid`, `cli.cheap`, each a model and an effort). Slots are compared as slots: a routed reviewer is still never below its implementer's slot.
 

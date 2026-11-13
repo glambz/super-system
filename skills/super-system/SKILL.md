@@ -19,12 +19,9 @@ Binds you and every subagent; put it in every subagent brief.
 ## Startup (every run)
 
 1. **Platform.** Detect which assistant you are running in from tool names and env vars (signals in `references/platforms.md`); config folders only break ties. If unsure, ask.
-2. **Settings.** Read `~/.super-system/config.json`, using the platform's config key from `references/platforms.md`: `workflow`, `models`, `platforms`, `roles`. Saved `slots` override the defaults there. If the file is missing, or this platform's entry is missing or incomplete (no `workflow` or `models`, or no `slots` on a platform without built-in defaults), do first-run setup for this platform only:
-   - Fill the slots and set up subagent dispatch as `references/platforms.md` says for this platform (ask before writing any agent file).
-   - Ask for workflow mode and model mode. Platform mode starts `native`; `mixed` setup is in `references/runners.md`.
-   - Write only this platform's entry; never overwrite other platforms' entries or the top-level fields. If the file is not valid JSON, show the error, copy it to `config.json.bak`, and offer to fix the syntax in place; never replace it with a fresh file.
+2. **Settings.** Read `~/.super-system/config.json`, using the platform's config key from `references/platforms.md`: `workflow`, `models`, `platforms`, `roles`. Saved `slots` override the defaults there. If the file is missing, or this platform's entry is missing or incomplete (no `workflow` or `models`, or no `slots` on a platform without built-in defaults), do first-run setup for this platform only, as `references/platforms.md` describes (First-run setup).
 3. **Overrides.** `--workflow` / `--models` / `--platforms` (or plain words: "economy models this time") apply to this run only. At the end of the run, ask once whether to save them as this platform's default.
-4. **Tracks.** From the task and the codebase decide `ui`, `backend` or `ui+backend`.
+4. **Tracks and lessons.** From the task and the codebase decide `ui`, `backend` or `ui+backend`. Read `~/.super-system/lessons.md` (if present) and apply its active rules in briefs and plans.
 5. **Dependencies.** Check core always, UI only on the `ui` track (see Dependencies). Installable but missing: stop, name it, show the README's install command. No version for this platform: continue and say so in the status line.
 6. **Status line.** Print it, then go:
    `super-system · <Platform> · flow: <flow> · workflow: <mode> · models: <mode | n/a — single agent> · platforms: <native | mixed (role: platform/model·effort, …)> · tracks: <tracks>`
@@ -34,7 +31,7 @@ Invocation: `/super-system <flow> [args] [--workflow full|normal|economy] [--mod
 
 ## Flows
 
-Backbone: understand → explore options → **Gate 1** → plan → **Gate 2** → implement + review → verify → final audit → report.
+Backbone: understand → explore options → **Gate 1** → plan → **Gate 2** → implement + review → verify → final audit → retrospective → report.
 
 | Flow | Read | Runs |
 |---|---|---|
@@ -50,7 +47,7 @@ Then read `references/track-ui.md` and/or `references/track-backend.md` for the 
 
 A gate is a hard pause: stop calling tools and wait for the user.
 - **Gate 1** shows the options explored (prototype links or option write-ups), their tradeoffs, the proposed scope, and the list of main screens/components.
-- **Gate 2** shows the task breakdown (each task marked mechanical or not, with the files it may change), test strategy and verification criteria, and asks whether to run subagents concurrently or one at a time. Concurrent tasks run together only where their file sets don't overlap; an overlapping task starts after the earlier task's loop ends. What Gate 2 approves is the scope.
+- **Gate 2** shows the task breakdown (each task marked mechanical or not, with the files it may change), test strategy and verification criteria, and asks whether to run subagents concurrently or one at a time. Concurrent tasks run together only where their file sets don't overlap; an overlapping task starts after the earlier task's loop ends. What Gate 2 approves is the scope. For a feature on both tracks it also shows the split decision (contract-first; see the flow file).
 
 ## Modes
 
@@ -68,6 +65,7 @@ These apply to every subagent, native or routed.
 Use them as techniques inside your own steps. Never run another skill's whole workflow (its own approval pauses, plan files or subagents).
 - **Superpowers** (core): brainstorming's questioning style in "understand" (Gate 1 is the approval); test-driven-development in implementer tasks; systematic-debugging in `fix`; verification-before-completion in the final audit.
 - **Ponytail** (core): implementers write the minimum; reviewers reject bloat.
+- Superpowers and Ponytail reach routed agents through the technique cards in `references/techniques/`.
 - **UI track**: SuperDesign (canvas + asset generation), `design-taste-frontend`, `web-design-guidelines`, `modern-web-guidance`, and a browser you can drive. `animation` is used if installed (no public source; never stop for it).
 
 ## Safeguards
@@ -87,6 +85,10 @@ The final audit ticks every item. A failed item goes back to implementation; nev
 - [ ] Nothing outside Gate 2 scope changed.
 - [ ] Anything not verified is listed as not verified.
 
+## Retrospective
+
+Every run, after final audit and before the report, write `retro.md`, derive skill-improvement proposals, and append durable lessons to `~/.super-system/lessons.md` as `references/retrospective.md` describes.
+
 ## End-of-run report
 
-What was produced (files, links); what was verified and how; what was not done or not verified; per task, review rounds and each role's platform/model; deficiencies accepted by the user; blocker and stall events and what the user chose; the run folder; the status line; and, if overrides were used, the one question about saving them.
+Write the end-of-run report per `references/retrospective.md`, including the retro summary and proposals.

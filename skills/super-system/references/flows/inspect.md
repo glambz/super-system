@@ -10,4 +10,5 @@ Invocation: `/super-system inspect <url> [page-type]`. Page types: `landing-page
 4. **Reconstruct on canvas.** Author interactive HTML/CSS drafts (desktop and mobile) and upload them following the upload steps under "Explore options" in `references/track-ui.md`. Record the URLs.
 5. **Write DESIGN.md.** Use the inspect variant of the template, at the `inspect` location under "Spec artifact" in `references/track-ui.md`, merging into any existing entry.
 6. **Check.** A reviewer checks every label in every mode: each `[Measured]` value must trace to recorded evidence, each `[Observed]` to a described behavior, and anything unsupported is relabeled `[Inferred]`. Workflow mode only scales how much is re-measured on the live page: full = every token; normal = every color and type token; economy = colors plus display and body type. Confirm the canvas drafts render.
-7. **Report.** As in SKILL.md, including the DESIGN.md path, the canvas links, and the counts per evidence label.
+7. **Retrospective.** Run the Retrospective in SKILL.md.
+8. **Report.** As in SKILL.md, including the DESIGN.md path, the canvas links, and the counts per evidence label.

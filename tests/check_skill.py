@@ -38,10 +38,10 @@ ONCE = [
 REQUIRED_PHRASES = {
     "SKILL.md": [
         "~/.super-system/config.json", "--workflow", "--models", "If unsure, ask",
-        "first-run", "never overwrite other platforms", "this run only", "Gate 1",
+        "first-run", "this run only", "Gate 1",
         "Gate 2", "reviewer", "references/platforms.md", "references/flows/",
         "references/track-ui.md", "references/track-backend.md", "Definition of done",
-        "missing or incomplete", "config.json.bak", "never replace it", "config folders only break ties",
+        "missing or incomplete", "config folders only break ties",
         "saved `slots` override", "used if installed",
         "## Conduct", "every subagent brief", "ask when unclear", "no hallucination",
         "no unsupported conclusions", "include it with its reason",
@@ -50,16 +50,21 @@ REQUIRED_PHRASES = {
         "file sets don't overlap", "stallMinutes", "stall check wasn't available",
         "in every platform mode", "never kill a running agent", "after the earlier task's loop ends",
         "reopened tasks get fresh review rounds",
+        "~/.super-system/lessons.md", "## Retrospective", "retro.md", "contract-first",
+        "references/retrospective.md", "technique cards", "references/techniques/",
+        "brainstorming", "test-driven-development", "systematic-debugging", "verification-before-completion",
     ],
     "references/modes.md": [
         "platform mode", "native", "mixed", "generic role table", "cli", "runner-only entry", "never below",
         "root-cause instructions", "mechanical task",
+        "keyed by track", "cli.tools",
     ],
     "references/track-ui.md": [
         "never silently erase", "tasteFile", "designLibrary", "1440", "390", "44px",
         "prefers-reduced-motion", "refresh means merge", "<skill-dir>/scripts/contrast-check.py", "references/modes.md",
+        "docs/design/api/", "contract",
     ],
-    "references/track-backend.md": ["never prod", "ADR", "references/modes.md"],
+    "references/track-backend.md": ["never prod", "ADR", "references/modes.md", "docs/design/api/", "contract"],
     "references/design-md-template.md": [
         "[Measured]", "[Observed]", "[Inferred]", "[Decided]", "superdesign:", "history:",
     ],
@@ -69,9 +74,18 @@ REQUIRED_PHRASES = {
         "Config key:** `kilo-code`", "folder-only match",
         "You are a subagent. Follow the role file and task in your prompt exactly.", "not verified",
         "run_in_background", "references/modes.md",
+        "~/.agents/skills", "~/.gemini/config/skills",
+        "## First-run setup", "never overwrite other platforms", "config.json.bak", "never replace it",
     ],
-    "references/flows/inspect.md": ["every label in every mode"],
-    "references/flows/build.md": ["chosen at Gate 2", "shared runtime resources"],
+    "references/retrospective.md": [
+        "## Retrospective", "retro.md", "~/.super-system/lessons.md",
+        "## End-of-run report", "never edit the skill without the user's approval",
+    ],
+    "references/flows/inspect.md": ["every label in every mode", "Retrospective"],
+    "references/flows/review.md": ["Retrospective"],
+    "references/flows/build.md": ["chosen at Gate 2", "shared runtime resources", "docs/design/api/", "contract", "integration check"],
+    "references/flows/change.md": ["contract"],
+    "references/flows/fix.md": ["contract", "regression_checks"],
     "references/runners.md": [
         "references/modes.md", "~/.super-system/runs/", "agy models", "model_provider", "ask the user to confirm", "cli.tools",
         "agy -p", "codex exec", "claude -p", "--dangerously-skip-permissions",
@@ -84,15 +98,23 @@ REQUIRED_PHRASES = {
         "outside that union",
         "close stdin", "< /dev/null", '{"event": "result", "result"', "stopping the shell that started it",
         "the schema's full text", "code fence", "not enforced", "is of type `error`",
+        "## Run scripts", "red_evidence", "no_test_reason", "concurrency", "429", "root agent idle",
+        "references/techniques/ponytail.md", "references/techniques/tdd.md", "references/techniques/debugging.md",
+        "references/techniques/verification.md", "references/techniques/security-backend.md",
+        "references/techniques/ui-quality.md", "references/techniques/contract.md",
+        "ponytail", "test-driven-development", "systematic-debugging", "verification-before-completion", "security-and-hardening",
+        "may be empty",
     ],
     "references/roles/scout.md": ["read-only", "evidence", "references/schemas/scout.json", "only the JSON object", "never dispatch", "never load or run that skill"],
-    "references/roles/implementer.md": ["files allowed", "blocked", "references/schemas/implementer.json", "only the JSON object", "never dispatch", "never load or run that skill"],
+    "references/roles/implementer.md": ["files allowed", "blocked", "references/schemas/implementer.json", "only the JSON object", "never dispatch", "never load or run that skill", "red_evidence", "no_test_reason", "may be empty"],
     "references/roles/reviewer.md": [
-        "scratch folder", "never edit project files", "not yours to judge", "never load or run that skill", "not_checked", "references/schemas/reviewer.json", "only the JSON object", "never dispatch",
+        "scratch folder", "never edit project files", "not yours to judge", "never load or run that skill", "not_checked", "references/schemas/reviewer.json", "only the JSON object", "never dispatch", "regression_checks",
     ],
+    "references/techniques/security-backend.md": ["security-and-hardening", "run lessons"],
     "../../README.md": [
         "Flash · high", "cheap for mechanical tasks", "reported", "--platforms", '"platforms": "mixed"', "agy",
         "codex exec", "--dangerously-skip-permissions", "~/.super-system/runs/", "can run any command",
+        "What's new in v3", "concurrency", "keyed by track",
     ],
 }
 
@@ -184,10 +206,10 @@ def check_contrast():
     return [] if r.returncode == 0 else [f"contrast selftest failed: {r.stdout.strip()}"]
 
 
-# role -> (exact top-level required fields, (enum field, values) or None). Spec 2026-11-09 §7.
+# role -> (exact top-level required fields, (enum field, values) or None). Spec 2026-11-09 §7 + 2026-11-13 v3.
 SCHEMAS = {
-    "implementer": (["status", "summary", "files_changed", "tests_run", "blocker"], ("status", ["done", "blocked", "failed"])),
-    "reviewer": (["verdict", "tests_run", "findings", "not_checked"], ("verdict", ["pass", "fail"])),
+    "implementer": (["status", "summary", "files_changed", "tests_run", "blocker", "red_evidence", "no_test_reason"], ("status", ["done", "blocked", "failed"])),
+    "reviewer": (["verdict", "tests_run", "findings", "not_checked", "regression_checks"], ("verdict", ["pass", "fail"])),
     "scout": (["findings", "open_questions", "not_checked"], None),
 }
 
@@ -271,11 +293,40 @@ def check_role_files():
     return fails
 
 
+TECHNIQUES = [
+    "ponytail", "tdd", "debugging", "verification",
+    "security-backend", "ui-quality", "contract",
+]
+
+
+def check_techniques():
+    fails = []
+    runners_path = SKILL_DIR / "references" / "runners.md"
+    runners_text = runners_path.read_text(encoding="utf-8") if runners_path.is_file() else ""
+    for name in TECHNIQUES:
+        rel_path = f"references/techniques/{name}.md"
+        p = SKILL_DIR / rel_path
+        if not p.is_file():
+            fails.append(f"{rel_path} missing")
+            continue
+        text = p.read_text(encoding="utf-8")
+        lines = text.splitlines()
+        if len(lines) > 60:
+            fails.append(f"{rel_path}: {len(lines)} lines > 60")
+        if not re.search(r"^Source:", text, re.M):
+            fails.append(f"{rel_path}: missing Source: line")
+        low = text.lower()
+        fails += [f"{rel_path}: contains trigger word {w!r}" for w in TRIGGER_WORDS if w in low]
+        if rel_path not in runners_text:
+            fails.append(f"references/runners.md: missing reference to {rel_path}")
+    return fails
+
+
 def main():
     fails = []
     for check in (check_frontmatter, check_size, check_banned, check_models_only_in_platforms,
-                  check_refs, check_phrases, check_once, check_contrast, check_schemas, check_role_files, check_stale,
-                  check_no_duplicate_phrase_keys):
+                  check_refs, check_phrases, check_once, check_contrast, check_schemas, check_role_files,
+                  check_techniques, check_stale, check_no_duplicate_phrase_keys):
         fails += check()
     for f in fails:
         print(f"FAIL: {f}")

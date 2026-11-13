@@ -35,6 +35,7 @@ Match styling density to what the screen is for:
 - **Library copy:** if `designLibrary` is set, copy the project's DESIGN.md (and prototype docs) to `<designLibrary>/<project-name>/<page-type>/` after Gate 1 and again at the end of the run. Never edit the library copy directly; refresh it from the project copy. Refresh means merge, as in the next bullet, never a plain overwrite.
 - **`inspect` output:** `<designLibrary>/<domain>/<page-type>/DESIGN.md`, or `./design-library/<domain>/<page-type>/DESIGN.md` when `designLibrary` is not set.
 - **Existing entries:** merge updates into them; never silently erase historical notes or working canvas links. Carry the existing `history:` list and notes over unchanged and append a new `history:` entry for this run.
+- **API contract (split features):** when a feature touches both tracks and Gate 2 splits it, UI tasks own UI files only, code strictly against the frozen contract `docs/design/api/<feature>.md`, and mock the API until the post-merge integration check. Any contract change goes back to the orchestrator.
 
 ## Implementation defaults
 
