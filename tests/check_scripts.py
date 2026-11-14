@@ -335,6 +335,32 @@ def check_shell_helpers_functional():
         if r_dirty.returncode == 0:
             fails.append("review-wrap.sh returned 0 even though reviewer modified a file")
 
+        # 1b. review-wrap.sh with non-ASCII filenames/content under PYTHONIOENCODING=ascii
+        rw_uni_base = tmp_path / "rw_uni"
+        rw_uni_base.mkdir()
+        rw_repo = _init_temp_repo(rw_uni_base)
+        uni_file = rw_repo / "note_🎉_中.txt"
+        uni_file.write_bytes(b"base \xf0\x9f\x8e\x89 \xe4\xb8\xad \xff\xfe\n")
+        _git(rw_repo, "add", "note_🎉_中.txt")
+        _git(rw_repo, "commit", "-m", "init unicode")
+        ascii_env = {**os.environ, "PYTHONIOENCODING": "ascii"}
+
+        for qp in ("true", "false"):
+            _git(rw_repo, "config", "core.quotePath", qp)
+            r_rw_uni = subprocess.run(
+                [bash, rw, rw_repo.as_posix(), "HEAD", bash, "-c", f"printf 'x' >> '{uni_file.as_posix()}'"],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                env=ascii_env,
+            )
+            if r_rw_uni.returncode == 0 or r_rw_uni.stdout.splitlines() != ["changed: note_🎉_中.txt", "review-wrap: CHANGED"]:
+                fails.append(
+                    f"review-wrap.sh (quotePath={qp}, ascii) failed to report only the changed unicode file: "
+                    f"rc={r_rw_uni.returncode} out={r_rw_uni.stdout!r} err={r_rw_uni.stderr!r}"
+                )
+
         # 2. worktree-setup.sh & worktree-cleanup.sh (including nested link inside deps)
         (repo / ".env").write_text("SECRET=1\n", encoding="utf-8")
         dep_dir = repo / "deps"
@@ -841,6 +867,26 @@ def check_shell_helpers_functional():
     return fails
 
 
+def check_contrast_check_functional():
+    script = SCRIPTS_DIR / "contrast-check.py"
+    if not script.is_file():
+        return ["contrast-check.py: missing for functional test"]
+    fails = []
+    r = subprocess.run(
+        [sys.executable, str(script), "😀中", "#FFFFFF"],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        env={**os.environ, "PYTHONIOENCODING": "ascii"},
+    )
+    if r.returncode != 2 or "error:" not in r.stdout or "😀中" not in r.stdout or "Traceback" in r.stderr:
+        fails.append(
+            f"contrast-check.py (unicode arg, ascii): rc={r.returncode} out={r.stdout!r} err={r.stderr!r}"
+        )
+    return fails
+
+
 def main():
     fails = []
     for check in (
@@ -848,6 +894,7 @@ def main():
         check_syntax,
         check_clean_content,
         check_removed_checks_functional,
+        check_contrast_check_functional,
         check_shell_helpers_functional,
     ):
         fails += check()

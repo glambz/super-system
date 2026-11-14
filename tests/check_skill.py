@@ -127,6 +127,8 @@ REQUIRED_PHRASES = {
         "records each in `removed_checks` as safe",
         "scratch/**/.env", "delete any env or credential file",
         "the invariant", "never prescribes a mechanism",
+        "results/<name>.meta", "what the shipped runner scripts record",
+        "**probe:**", "parsing, encoding or matching", "does not count as a review round",
     ],
     "references/roles/scout.md": ["read-only", "evidence", "references/schemas/scout.json", "only the JSON object", "never dispatch", "never load or run that skill"],
     "references/roles/implementer.md": ["files allowed", "blocked", "references/schemas/implementer.json", "only the JSON object", "never dispatch", "never load or run that skill", "red_evidence", "no_test_reason", "may be empty"],
@@ -142,6 +144,7 @@ REQUIRED_PHRASES = {
         "codex exec", "--dangerously-skip-permissions", "~/.super-system/runs/", "can run any command",
         "What's new in v3", "What's new in v3.1", "concurrency", "keyed by track",
         "What's new in v3.2", "removed_checks", "early polish groups",
+        "results/<name>.meta", "probe before review", "utf-8-safe", "console code page",
     ],
 }
 

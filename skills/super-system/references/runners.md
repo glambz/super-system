@@ -25,6 +25,7 @@ Each run gets `~/.super-system/runs/<project-name>-<YYYYMMDD-HHMMSS>/`, outside 
 - `logs/<name>.jsonl`: the CLI's stdout (its event stream; CLI runs only).
 - `logs/<name>.err`: the CLI's stderr.
 - `results/<name>.json`: the agent's answer, as JSON.
+- `results/<name>.meta`: what the shipped runner scripts record about the run (CLI runs only): the exit code, the CLI's status where it reports one, and the conversation or thread id used to resume.
 - `scratch/<name>/`: the agent's own temporary files.
 
 Never write run files into the project. Keep the folder after the run; the end-of-run report gives its path.
@@ -113,6 +114,7 @@ Never decide from the exit code or file size alone. When a run's process ends, c
    - The reviewer: hash the reviewed task's files before and after; they must be unchanged. A new untracked file outside that union counts against the reviewer. When a review ends, delete any env or credential file left under its scratch folder (for example `scratch/**/.env`).
    - **Base-diff guard:** before dispatching the reviewer, run `scripts/removed-checks.py <worktree> <base> <files…>` and pass its list of removed permission, visibility, validation, or error lines to the reviewer, who records each in `removed_checks` as safe, or reports it as a finding.
    - **Full-suite check:** before dispatching the reviewer, run the project's full test suite in the task's worktree (in the background) and compare its failures with the known-failing list in the brief's hard constraints. Put every new failure into the reviewer's brief; the reviewer confirms each one and reports it as a finding. In `economy` workflow mode skip this: the full suite runs once at the end (`references/modes.md`).
+   - **Probe:** after an implementer round that changes parsing, encoding or matching, run one cheap experiment with an input the tests do not cover (another encoding, another key order, an empty or missing file) before dispatching the reviewer. A failure goes back to the implementer as a fix round, stated as what must hold; it does not count as a review round.
 
 ## Parallel tasks in worktrees
 

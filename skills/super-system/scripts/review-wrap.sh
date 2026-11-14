@@ -28,14 +28,23 @@ from pathlib import Path
 
 wt, base = Path(sys.argv[1]), sys.argv[2]
 
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 def git_lines(*args):
-    r = subprocess.run(["git", "-C", str(wt), *args], capture_output=True, text=True)
+    r = subprocess.run(
+        ["git", "-C", str(wt), *args],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="surrogateescape",
+    )
     if r.returncode != 0:
         sys.stderr.write(r.stderr)
         sys.exit(r.returncode)
-    return [line for line in r.stdout.splitlines() if line]
+    return [line for line in r.stdout.split("\0") if line]
 
-files = sorted(set(git_lines("diff", "--name-only", base) + git_lines("ls-files", "-o", "--exclude-standard")))
+files = sorted(set(git_lines("diff", "--name-only", "-z", base) + git_lines("ls-files", "-o", "--exclude-standard", "-z")))
 out = {}
 for rel in files:
     p = wt / rel
@@ -58,6 +67,10 @@ if [[ "$before" != "$after" ]]; then
   "$py_bin" - "$before" "$after" <<'PY'
 import json
 import sys
+
+for stream in (sys.stdout, sys.stderr):
+    if hasattr(stream, "reconfigure"):
+        stream.reconfigure(encoding="utf-8", errors="replace")
 
 b, a = json.loads(sys.argv[1]), json.loads(sys.argv[2])
 for k in sorted(set(b) | set(a)):

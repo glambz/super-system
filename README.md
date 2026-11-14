@@ -310,6 +310,7 @@ Gate 1 takes a minute to pick a direction. Gate 2 takes a minute to read a plan.
 6. **No secrets in scratch copies**: reviewers never copy env or credential files into scratch folders (using stub values instead), and finished reviews delete any left behind.
 7. **Invariant-based fix briefs**: fix briefs state what must hold after the fix without prescribing an unverified mechanism.
 8. **Early polish groups**: a polish group can start as soon as its files no longer overlap any active or pending task.
+9. **Runner follow-ups**: `results/<name>.meta` is documented in the run folder list, implementer rounds changing parsing, encoding, or matching get a cheap probe before review, and shipped helper scripts stay UTF-8-safe regardless of console code page.
 
 ### What's new in v3.1
 

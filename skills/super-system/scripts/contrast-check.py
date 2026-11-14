@@ -68,6 +68,8 @@ def selftest():
 
 
 def main(argv):
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     if argv == ["--selftest"]:
         return selftest()
     if len(argv) != 2:
