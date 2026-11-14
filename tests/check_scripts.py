@@ -184,6 +184,110 @@ def check_removed_checks_functional():
         )
         if "café x.py:3:" not in r.stdout:
             fails.append(f"removed-checks.py: did not name the non-ASCII/space path 'café x.py:3:'; got: {r.stdout!r} {r.stderr!r}")
+
+        # Deny branches (rules 1 & 2) and '--' handling (rule 3).
+        deny = repo / "deny.py"
+        deny.write_text(
+            "def check(user, org_ids, flag):\n"
+            "    if user.org_id not in org_ids:\n"
+            "        return False\n"
+            "    if flag == 1:\n"
+            "        return {'error': 'denied'}\n"
+            "    if flag == 2:\n"
+            '        return  {  "error": "bad"}\n'
+            "    if flag == 3: return None\n"
+            "    if flag == 4: return\n"
+            "    if flag == 5:\n"
+            "        return None\n"
+            "    elif flag == 6:\n"
+            "        return\n"
+            "    val = 42\n"
+            "    return None\n",
+            encoding="utf-8",
+            newline="\n",
+        )
+        _git(repo, "add", "deny.py")
+        _git(repo, "commit", "-m", "deny branches")
+        deny.write_text("def check(user, org_ids, flag):\n    return 0\n", encoding="utf-8", newline="\n")
+
+        r_deny = subprocess.run(
+            [sys.executable, str(script), str(repo), "HEAD", "deny.py"],
+            capture_output=True,
+            text=True,
+        )
+        if r_deny.returncode != 0:
+            fails.append(f"removed-checks.py (deny.py) exited {r_deny.returncode}: {r_deny.stderr.strip()}")
+        else:
+            out_deny = r_deny.stdout
+            expected_deny = (
+                "deny.py:2:     if user.org_id not in org_ids:\n"
+                "deny.py:3:         return False\n"
+                "deny.py:5:         return {'error': 'denied'}\n"
+                'deny.py:7:         return  {  "error": "bad"}\n'
+                "deny.py:8:     if flag == 3: return None\n"
+                "deny.py:9:     if flag == 4: return\n"
+                "deny.py:11:         return None\n"
+                "deny.py:13:         return\n"
+            )
+            deny_lines = out_deny.splitlines()
+            if not deny_lines or any("deny.py:15:" in ln for ln in deny_lines):
+                fails.append(f"removed-checks.py: expected non-empty deny listing without deny.py:15, got: {out_deny!r}")
+            if out_deny != expected_deny:
+                fails.append(f"removed-checks.py (deny.py) mismatch:\ngot:      {out_deny!r}\nexpected: {expected_deny!r}")
+
+            r_deny_dash = subprocess.run(
+                [sys.executable, str(script), str(repo), "HEAD", "--", "deny.py"],
+                capture_output=True,
+                text=True,
+            )
+            if r_deny_dash.returncode != 0 or r_deny_dash.stdout != expected_deny:
+                fails.append(
+                    f"removed-checks.py: '--' before file mismatch: rc={r_deny_dash.returncode} "
+                    f"got={r_deny_dash.stdout!r} expected={expected_deny!r}"
+                )
+
+            r_usage = subprocess.run([sys.executable, str(script)], capture_output=True, text=True)
+            if r_usage.returncode != 2 or "[--]" not in r_usage.stderr:
+                fails.append(f"removed-checks.py: usage stderr missing '[--]': rc={r_usage.returncode} err={r_usage.stderr!r}")
+
+            r_all = subprocess.run(
+                [sys.executable, str(script), str(repo), "HEAD"],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+            )
+            r_all_dash = subprocess.run(
+                [sys.executable, str(script), str(repo), "HEAD", "--"],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+            )
+            if r_all_dash.returncode != 0 or r_all_dash.stdout != r_all.stdout:
+                fails.append(
+                    f"removed-checks.py: bare '--' changed output: rc={r_all_dash.returncode} "
+                    f"got={r_all_dash.stdout!r} expected={r_all.stdout!r}"
+                )
+
+            uni = repo / "uni.py"
+            uni.write_text(
+                'def check():\n    raise ValueError("denied 😀 中")\n',
+                encoding="utf-8",
+                newline="\n",
+            )
+            _git(repo, "add", "uni.py")
+            _git(repo, "commit", "-m", "unicode check")
+            uni.write_text("def check():\n    return 0\n", encoding="utf-8", newline="\n")
+            r_uni = subprocess.run(
+                [sys.executable, str(script), str(repo), "HEAD", "uni.py"],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                env={**os.environ, "PYTHONIOENCODING": "ascii"},
+            )
+            if r_uni.returncode != 0 or 'uni.py:2:     raise ValueError("denied 😀 中")' not in r_uni.stdout:
+                fails.append(
+                    f"removed-checks.py (unicode): rc={r_uni.returncode} out={r_uni.stdout!r} err={r_uni.stderr!r}"
+                )
     return fails
 
 
@@ -590,6 +694,149 @@ def check_shell_helpers_functional():
             )
             if r_no_role.returncode == 0 or "role" not in r_no_role.stderr.lower():
                 fails.append(f"{runner} did not fail clearly on missing role suffix: rc={r_no_role.returncode} err={r_no_role.stderr!r}")
+
+        # Verify run-codex.sh rate-limit retry scoping and meta-file-first behavior
+        stub_bin_rl = tmp_path / "bin_rl"
+        stub_bin_rl.mkdir()
+        (stub_bin_rl / "codex").write_text(
+            "#!/usr/bin/env bash\n"
+            "printf 'call\\n' >> \"$CODEX_CALL_LOG\"\n"
+            "calls=$(wc -l < \"$CODEX_CALL_LOG\" | tr -d ' ')\n"
+            "out=''\n"
+            "while [[ $# -gt 0 ]]; do\n"
+            "  if [[ \"$1\" == \"-o\" ]]; then out=\"$2\"; shift 2; else shift; fi\n"
+            "done\n"
+            "case \"$CODEX_TEST_MODE\" in\n"
+            "  false_retry)\n"
+            "    echo '{\"type\":\"thread.started\",\"thread_id\":\"th-fr\"}'\n"
+            "    echo '{\"type\":\"item.completed\",\"item\":{\"type\":\"agent_message\",\"text\":\"HTTP 429 rate limit exceeded, quota\"}}'\n"
+            "    printf '{\"status\":\"done\"}' > \"$out\"\n"
+            "    echo '{\"type\":\"turn.completed\"}'\n"
+            "    ;;\n"
+            "  event_limit)\n"
+            "    echo '{\"type\":\"thread.started\",\"thread_id\":\"th-ev\"}'\n"
+            "    if [[ \"$calls\" -eq 1 ]]; then\n"
+            "      echo '{\"type\":\"error\",\"message\":\"high demand\"}'\n"
+            "      exit 1\n"
+            "    fi\n"
+            "    printf '{\"status\":\"done\"}' > \"$out\"\n"
+            "    echo '{\"type\":\"turn.completed\"}'\n"
+            "    ;;\n"
+            "  stderr_limit)\n"
+            "    echo '{\"type\":\"thread.started\",\"thread_id\":\"th-err\"}'\n"
+            "    if [[ \"$calls\" -eq 1 ]]; then\n"
+            "      echo 'usage limit' >&2\n"
+            "      exit 1\n"
+            "    fi\n"
+            "    printf '{\"status\":\"done\"}' > \"$out\"\n"
+            "    echo '{\"type\":\"turn.completed\"}'\n"
+            "    ;;\n"
+            "  bad_json)\n"
+            "    echo '{\"type\":\"thread.started\",\"thread_id\":\"th-bad\"}'\n"
+            "    printf 'not json' > \"$out\"\n"
+            "    echo '{\"type\":\"turn.completed\"}'\n"
+            "    ;;\n"
+            "  error_spaced)\n"
+            "    echo '{\"type\":\"thread.started\",\"thread_id\":\"th-sp\"}'\n"
+            "    if [[ \"$calls\" -eq 1 ]]; then\n"
+            "      echo '{\"type\": \"error\", \"message\": \"high demand\"}'\n"
+            "      exit 1\n"
+            "    fi\n"
+            "    printf '{\"status\":\"done\"}' > \"$out\"\n"
+            "    echo '{\"type\":\"turn.completed\"}'\n"
+            "    ;;\n"
+            "  error_reordered)\n"
+            "    echo '{\"type\":\"thread.started\",\"thread_id\":\"th-ro\"}'\n"
+            "    if [[ \"$calls\" -eq 1 ]]; then\n"
+            "      echo '{\"id\":\"1\",\"type\":\"error\",\"message\":\"high demand\"}'\n"
+            "      exit 1\n"
+            "    fi\n"
+            "    printf '{\"status\":\"done\"}' > \"$out\"\n"
+            "    echo '{\"type\":\"turn.completed\"}'\n"
+            "    ;;\n"
+            "  item_nested_error)\n"
+            "    echo '{\"type\":\"thread.started\",\"thread_id\":\"th-in\"}'\n"
+            "    echo '{\"type\":\"item.completed\",\"item\":{\"type\":\"error\",\"message\":\"429 rate limit, quota\"}}'\n"
+            "    printf '{\"status\":\"done\"}' > \"$out\"\n"
+            "    echo '{\"type\":\"turn.completed\"}'\n"
+            "    ;;\n"
+            "  error_unicode)\n"
+            "    echo '{\"type\":\"thread.started\",\"thread_id\":\"th-uni\"}'\n"
+            "    if [[ \"$calls\" -eq 1 ]]; then\n"
+            "      echo '{\"type\":\"error\",\"message\":\"high demand 😀 中\"}'\n"
+            "      exit 1\n"
+            "    fi\n"
+            "    printf '{\"status\":\"done\"}' > \"$out\"\n"
+            "    echo '{\"type\":\"turn.completed\"}'\n"
+            "    ;;\n"
+            "esac\n",
+            encoding="utf-8",
+            newline="\n",
+        )
+
+        def _run_codex_rl(case_name, mode, extra_env=None):
+            call_log = tmp_path / f"calls_{case_name}.txt"
+            call_log.write_text("", encoding="utf-8")
+            (run_dir / "briefs" / f"{case_name}-implementer-r1.md").write_text("brief\n", encoding="utf-8")
+            rl_env = os.environ.copy()
+            rl_env["PATH"] = str(stub_bin_rl) + os.pathsep + rl_env.get("PATH", "")
+            rl_env["RETRY_SLEEP"] = "0"
+            rl_env["CODEX_TEST_MODE"] = mode
+            rl_env["CODEX_CALL_LOG"] = call_log.as_posix()
+            if extra_env:
+                rl_env.update(extra_env)
+            proc = subprocess.run(
+                [
+                    bash,
+                    (SCRIPTS_DIR / "run-codex.sh").as_posix(),
+                    f"{case_name}-implementer",
+                    repo.as_posix(),
+                    run_dir.as_posix(),
+                    "1",
+                    schema.as_posix(),
+                    "test-model",
+                    "low",
+                ],
+                capture_output=True,
+                text=True,
+                env=rl_env,
+            )
+            num_calls = len(call_log.read_text(encoding="utf-8").splitlines())
+            meta = run_dir / "results" / f"{case_name}-implementer-r1.meta"
+            return proc, num_calls, meta
+
+        p_fr, c_fr, _ = _run_codex_rl("fr", "false_retry")
+        if p_fr.returncode != 0 or c_fr != 1:
+            fails.append(f"run-codex.sh false retry on item.completed: rc={p_fr.returncode} calls={c_fr} err={p_fr.stderr!r}")
+
+        p_ev, c_ev, _ = _run_codex_rl("ev", "event_limit")
+        if p_ev.returncode != 0 or c_ev != 2:
+            fails.append(f"run-codex.sh did not retry real limit in error event: rc={p_ev.returncode} calls={c_ev} err={p_ev.stderr!r}")
+
+        p_se, c_se, _ = _run_codex_rl("se", "stderr_limit")
+        if p_se.returncode != 0 or c_se != 2:
+            fails.append(f"run-codex.sh did not retry real limit in stderr: rc={p_se.returncode} calls={c_se} err={p_se.stderr!r}")
+
+        p_bj, _, meta_bj = _run_codex_rl("bj", "bad_json")
+        meta_txt = meta_bj.read_text(encoding="utf-8") if meta_bj.is_file() else ""
+        if p_bj.returncode == 0 or not meta_bj.is_file() or "th-bad" not in meta_txt:
+            fails.append(f"run-codex.sh unparsable answer failed meta check: rc={p_bj.returncode} meta_exists={meta_bj.is_file()} meta={meta_txt!r}")
+
+        p_sp, c_sp, _ = _run_codex_rl("sp", "error_spaced")
+        if p_sp.returncode != 0 or c_sp != 2:
+            fails.append(f"run-codex.sh did not retry spaced error event: rc={p_sp.returncode} calls={c_sp} err={p_sp.stderr!r}")
+
+        p_ro, c_ro, _ = _run_codex_rl("ro", "error_reordered")
+        if p_ro.returncode != 0 or c_ro != 2:
+            fails.append(f"run-codex.sh did not retry reordered error event: rc={p_ro.returncode} calls={c_ro} err={p_ro.stderr!r}")
+
+        p_in, c_in, _ = _run_codex_rl("in", "item_nested_error")
+        if p_in.returncode != 0 or c_in != 1:
+            fails.append(f"run-codex.sh false retry on nested item error: rc={p_in.returncode} calls={c_in} err={p_in.stderr!r}")
+
+        p_uni, c_uni, _ = _run_codex_rl("uni", "error_unicode", extra_env={"PYTHONIOENCODING": "ascii"})
+        if p_uni.returncode != 0 or c_uni != 2:
+            fails.append(f"run-codex.sh did not retry unicode error event: rc={p_uni.returncode} calls={c_uni} err={p_uni.stderr!r}")
 
     return fails
 

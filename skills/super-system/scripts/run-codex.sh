@@ -58,7 +58,32 @@ while true; do
   fi
   set -e
 
-  if grep -Eiq '(^|[^0-9])429([^0-9]|$)|rate[ _-]?limit' "$err_path" "$jsonl_path" 2>/dev/null; then
+  # Look for rate limits only in stderr and in top-level error/turn.failed JSON objects, never in the agent's own
+  # output (file contents and command output in the stream mention 429 / "rate limit" and caused false retries).
+  if "$py_bin" - "$err_path" "$jsonl_path" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+pat = re.compile(
+    r"(?:^|[^0-9])429(?:[^0-9]|$)|rate[ _-]?limit|usage limit|quota|high demand|temporary errors",
+    re.IGNORECASE | re.MULTILINE,
+)
+err_p, jsonl_p = Path(sys.argv[1]), Path(sys.argv[2])
+if err_p.is_file() and pat.search(err_p.read_text(encoding="utf-8", errors="replace")):
+    sys.exit(0)
+if jsonl_p.is_file():
+    for line in jsonl_p.read_text(encoding="utf-8", errors="replace").splitlines():
+        try:
+            ev = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(ev, dict) and ev.get("type") in ("error", "turn.failed") and pat.search(line):
+            sys.exit(0)
+sys.exit(1)
+PY
+  then
     if [[ $attempt -lt $max_retries ]]; then
       attempt=$((attempt + 1))
       sleep "$retry_sleep"
@@ -68,7 +93,7 @@ while true; do
   break
 done
 
-extract_json_file "$result_path" "$result_path"
+extract_json_file "$result_path" "$result_path" || true
 
 "$py_bin" - "$role" "$jsonl_path" "$result_path" "$meta_path" "$rc" <<'PY'
 import json
@@ -101,7 +126,13 @@ for line in Path(jsonl_p).read_text(encoding="utf-8", errors="replace").splitlin
 Path(meta_p).write_text(f"exit={rc}\nthread_id={thread_id}\n", encoding="utf-8")
 
 req_key = {"reviewer": "verdict", "implementer": "status", "scout": "findings"}[role]
-obj = json.loads(Path(res_p).read_text(encoding="utf-8"))
+try:
+    obj = json.loads(Path(res_p).read_text(encoding="utf-8"))
+except (OSError, ValueError):
+    obj = None
+if not isinstance(obj, dict):
+    sys.stderr.write("error: the answer is not a JSON object\n")
+    sys.exit(1)
 if obj.get(req_key) in (None, ""):
     sys.stderr.write(f"error: missing required key {req_key!r} for role {role}\n")
     sys.exit(1)

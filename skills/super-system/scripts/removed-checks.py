@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-"""List removed lines vs <base> that look like permission/visibility/validation/error checks.
+"""List removed lines vs <base> that look like permission/visibility/validation/error checks
+(raise, HTTPException, assert, deny, forbidden, 401/403/404, permission, visible, scope,
+require_*, check_*, if not, not in, return False, return {"error"...}, or return / return None
+on or directly after an if/elif line).
 
 Rule: copy scripts into the run folder at the start of a run and run the copies;
 never edit a script while a process is executing it.
 
 Usage:
-    python removed-checks.py <worktree> <base> [files...]
+    python removed-checks.py <worktree> <base> [--] [files...]
 """
 
 import ast
@@ -17,8 +20,15 @@ import sys
 CHECK_RE = re.compile(
     r"\b(raise|HTTPException|assert|deny|forbidden|401|403|404|permission|visible|scope)\b"
     r"|\b(require_|check_)"
-    r"|\bif\s+not\b",
+    r"|\bif\s+not\b"
+    r"|\bnot\s+in\b"
+    r"|\breturn\s+False\b"
+    r"|\breturn\s*\{\s*['\"]error['\"]",
     re.IGNORECASE,
+)
+IF_RE = re.compile(r"^\s*(?:if|elif)\b")
+RETURN_NONE_RE = re.compile(
+    r"^\s*(?:(?:if|elif)\b[^#\n]*[:)]\s*)?return(?:\s+None)?\s*(?:(?:[;#]|//).*)?$"
 )
 HUNK_RE = re.compile(r"^@@ -(\d+)(?:,\d+)? \+")
 
@@ -32,11 +42,15 @@ def header_path(raw):
 
 
 def main(argv):
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
     if len(argv) < 2:
-        print("usage: removed-checks.py <worktree> <base> [files...]", file=sys.stderr)
+        print("usage: removed-checks.py <worktree> <base> [--] [files...]", file=sys.stderr)
         return 2
 
     worktree, base, *files = argv
+    files = [f for f in files if f != "--"]
     cmd = ["git", "-C", worktree, "diff", "-U0", base]
     if files:
         cmd += ["--", *files]
@@ -50,19 +64,29 @@ def main(argv):
 
     current_file = ""
     old_line = 0
+    prev_was_if = False
     for line in proc.stdout.splitlines():
         if line.startswith("diff --git "):
             current_file = ""
+            prev_was_if = False
         elif line.startswith(("--- a/", "+++ b/", '--- "a/', '+++ "b/')):
             current_file = header_path(line[4:])
+            prev_was_if = False
         elif line.startswith("@@ "):
             m = HUNK_RE.match(line)
             old_line = int(m.group(1)) if m else 0
+            prev_was_if = False
         elif line.startswith("-") and not line.startswith("--- "):
             content = line[1:]
-            if CHECK_RE.search(content):
+            is_if = bool(IF_RE.match(content))
+            if CHECK_RE.search(content) or (
+                (is_if or prev_was_if) and RETURN_NONE_RE.match(content)
+            ):
                 print(f"{current_file}:{old_line}: {content}")
+            prev_was_if = is_if
             old_line += 1
+        else:
+            prev_was_if = False
     return 0
 
 

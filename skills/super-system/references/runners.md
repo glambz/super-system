@@ -52,7 +52,7 @@ A brief must stand on its own: the agent starts with no memory of this run.
 - **Baseline.** Before each implementer run, record `<base>`: the commit `git stash create` prints (a snapshot of the working tree that leaves it untouched), or `git rev-parse HEAD` when it prints nothing because the tree is clean. Also record `git ls-files -o --exclude-standard` (untracked files). The done checks and the reviewer's diff use both. This requires a git repository: if the project has none, ask the user before dispatching (recommend `git init` and a first commit).
 - **No trigger word.** Never write this skill's name or its trigger word in a brief as an instruction or a skill to load: an outside agent that has the skill installed must not start the main flow. Call yourself "the orchestrator". File paths are exempt (the run folder, schemas and scripts sit in folders named after the skill); the role files tell agents never to load or run that skill.
 - **How the agent gets it.** The prompt you pass to the CLI is one line, "Read `<brief path>` and follow it exactly. Your final answer is JSON matching the schema you were given." Add the run folder with `--add-dir` so the agent can read the brief and write to its scratch folder.
-- **Fix rounds** resume the implementer's own conversation (the "Resume" command under each runner) with a brief that holds only the reviewer's findings. That way it doesn't re-read everything.
+- **Fix rounds** resume the implementer's own conversation (the "Resume" command under each runner) with a brief that holds only the reviewer's findings. That way it doesn't re-read everything. For each finding, the brief states what must hold after the fix (the invariant, for example "no input the caller controls can trigger the exemption"). It never prescribes a mechanism the orchestrator has not verified in the code.
 - **Reviews** are always a fresh run.
 
 ## Commands
@@ -106,12 +106,13 @@ Never decide from the exit code or file size alone. When a run's process ends, c
 3. **The answer:** the result file exists and matches the role's schema. If the agent wrapped the JSON in prose or a code fence, take the one JSON object out of it first, then check it. Still no valid object: a blocker.
 4. **What the agent says:**
    - implementer: `status` is `done`, and `red_evidence` is present and non-empty (unless `no_test_reason` is set because the brief explicitly says no test is needed; for `blocked` and `failed`, `red_evidence` may be empty);
-   - reviewer: `verdict` is set (`pass` or `fail`), every finding is complete, and `regression_checks` is populated in `fix`. A missing `verdict` (even with a non-empty result file) → rerun fresh once, then a blocker;
+   - reviewer: `verdict` is set (`pass` or `fail`), every finding is complete; in `fix`, `regression_checks` has an entry for every test in the implementer's `red_evidence`; `removed_checks` has an entry for every line passed from the base-diff guard. A missing `verdict` or missing entry (even with a non-empty result file) → rerun fresh once, then a blocker;
    - scout: every finding has evidence.
 5. **The files** (see "Baseline"):
    - The implementer: its changes are `git diff --name-only <base>` plus untracked files that weren't in the recorded list. All must be inside its files allowed, and `files_changed` matches that list (and is not empty for `done`); a `files_changed` mismatch alone → fix round, not a blocker. When tasks run concurrently, a change inside another running task's files allowed belongs to that task; a change outside the union of running tasks' files allowed is a scope violation.
-   - The reviewer: hash the reviewed task's files before and after; they must be unchanged. A new untracked file outside that union counts against the reviewer.
-   - **Base-diff guard:** before dispatching the reviewer, run `scripts/removed-checks.py <worktree> <base> <files…>` and pass its list of removed permission, visibility, validation, or error lines to the reviewer, who must confirm each is safe or reject.
+   - The reviewer: hash the reviewed task's files before and after; they must be unchanged. A new untracked file outside that union counts against the reviewer. When a review ends, delete any env or credential file left under its scratch folder (for example `scratch/**/.env`).
+   - **Base-diff guard:** before dispatching the reviewer, run `scripts/removed-checks.py <worktree> <base> <files…>` and pass its list of removed permission, visibility, validation, or error lines to the reviewer, who records each in `removed_checks` as safe, or reports it as a finding.
+   - **Full-suite check:** before dispatching the reviewer, run the project's full test suite in the task's worktree (in the background) and compare its failures with the known-failing list in the brief's hard constraints. Put every new failure into the reviewer's brief; the reviewer confirms each one and reports it as a finding. In `economy` workflow mode skip this: the full suite runs once at the end (`references/modes.md`).
 
 ## Parallel tasks in worktrees
 

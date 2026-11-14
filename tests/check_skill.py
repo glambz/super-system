@@ -60,6 +60,7 @@ REQUIRED_PHRASES = {
         "root-cause instructions", "mechanical task",
         "keyed by track", "cli.tools",
         "fix-round size", "polish round", "accepted minors",
+        "polish group may start early", "one last group",
     ],
     "references/track-ui.md": [
         "never silently erase", "tasteFile", "designLibrary", "1440", "390", "44px",
@@ -99,7 +100,7 @@ REQUIRED_PHRASES = {
         "decisions during the run",
     ],
     "references/flows/change.md": ["contract", "decisions during the run", "changed pre-existing sentence"],
-    "references/flows/fix.md": ["contract", "regression_checks", "decisions during the run"],
+    "references/flows/fix.md": ["contract", "regression_checks", "decisions during the run", "shared helper", "list every file that calls it"],
     "references/runners.md": [
         "references/modes.md", "~/.super-system/runs/", "agy models", "model_provider", "ask the user to confirm", "cli.tools",
         "agy -p", "codex exec", "claude -p", "--dangerously-skip-permissions",
@@ -121,18 +122,26 @@ REQUIRED_PHRASES = {
         "## Parallel tasks in worktrees", "quota-aware scheduling", "hard constraints",
         "known-failing tests", "scripts/removed-checks.py", "scripts/worktree-cleanup.sh",
         "decisions during the run", "cli.window_hours", "_lib.sh",
+        "full-suite check", "every new failure", "removed_checks",
+        "for every line passed from the base-diff guard",
+        "records each in `removed_checks` as safe",
+        "scratch/**/.env", "delete any env or credential file",
+        "the invariant", "never prescribes a mechanism",
     ],
     "references/roles/scout.md": ["read-only", "evidence", "references/schemas/scout.json", "only the JSON object", "never dispatch", "never load or run that skill"],
     "references/roles/implementer.md": ["files allowed", "blocked", "references/schemas/implementer.json", "only the JSON object", "never dispatch", "never load or run that skill", "red_evidence", "no_test_reason", "may be empty"],
     "references/roles/reviewer.md": [
         "scratch folder", "never edit project files", "not yours to judge", "never load or run that skill", "not_checked", "references/schemas/reviewer.json", "only the JSON object", "never dispatch", "regression_checks",
         "changed pre-existing sentence", "worked examples", "references/severity.md",
+        "removed_checks", "an empty array otherwise",
+        "never copy env or credential files", "stub value",
     ],
     "references/techniques/security-backend.md": ["security-and-hardening", "run lessons"],
     "../../README.md": [
         "Flash · high", "cheap for mechanical tasks", "reported", "--platforms", '"platforms": "mixed"', "agy",
         "codex exec", "--dangerously-skip-permissions", "~/.super-system/runs/", "can run any command",
         "What's new in v3", "What's new in v3.1", "concurrency", "keyed by track",
+        "What's new in v3.2", "removed_checks", "early polish groups",
     ],
 }
 
@@ -227,7 +236,7 @@ def check_contrast():
 # role -> (exact top-level required fields, (enum field, values) or None). Spec 2026-11-09 §7 + 2026-11-13 v3.
 SCHEMAS = {
     "implementer": (["status", "summary", "files_changed", "tests_run", "blocker", "red_evidence", "no_test_reason"], ("status", ["done", "blocked", "failed"])),
-    "reviewer": (["verdict", "tests_run", "findings", "not_checked", "regression_checks"], ("verdict", ["pass", "fail"])),
+    "reviewer": (["verdict", "tests_run", "findings", "not_checked", "regression_checks", "removed_checks"], ("verdict", ["pass", "fail"])),
     "scout": (["findings", "open_questions", "not_checked"], None),
 }
 
@@ -267,6 +276,8 @@ def check_schemas():
             fails.append(f"{path}: required is {schema.get('required')}, expected {fields}")
         if enum and schema.get("properties", {}).get(enum[0], {}).get("enum") != enum[1]:
             fails.append(f"{path}: {enum[0]} enum is not {enum[1]}")
+        if role == "reviewer" and schema.get("properties", {}).get("regression_checks", {}).get("type") != "array":
+            fails.append(f"{path}: regression_checks type is not 'array'")
         _strict_objects(schema, path, fails)
     return fails
 

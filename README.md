@@ -300,6 +300,17 @@ Gate 1 takes a minute to pick a direction. Gate 2 takes a minute to read a plan.
 
 ## Roadmap
 
+### What's new in v3.2
+
+1. **Codex runner rate-limit check & meta file**: rate-limit detection inspects only stderr and top-level `error` / `turn.failed` events (never agent output), and `<name>.meta` is always written before judging the answer.
+2. **Wider removed-checks guard**: `scripts/removed-checks.py` also flags removed `not in`, `return False`, returned error objects, and conditional `return None` / `return` lines, and ignores an extra `--`.
+3. **Full-suite check before review**: before dispatching a reviewer (except in `economy` mode), the full test suite runs in the task's worktree and any new failure goes into the reviewer's brief.
+4. **Shared-helper check in fix plans**: fixes that change a shared helper list every caller file so each sits in a task's files allowed or is explicitly excluded.
+5. **Reviewer `removed_checks` & array-only `regression_checks`**: reviewers record each base-diff guard line in `removed_checks`, and `regression_checks` is always an array.
+6. **No secrets in scratch copies**: reviewers never copy env or credential files into scratch folders (using stub values instead), and finished reviews delete any left behind.
+7. **Invariant-based fix briefs**: fix briefs state what must hold after the fix without prescribing an unverified mechanism.
+8. **Early polish groups**: a polish group can start as soon as its files no longer overlap any active or pending task.
+
 ### What's new in v3.1
 
 1. **Fix-round cap & minor triage**: fix rounds carry at most 3 Critical/Important findings; minors never trigger a fix round on their own and are either accepted (recorded in `retro.md` and surfaced at Gate 1/2 on the next run) or batched into one end-of-run polish round.

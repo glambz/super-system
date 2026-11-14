@@ -3,7 +3,7 @@
   "title": "reviewer result",
   "type": "object",
   "additionalProperties": false,
-  "required": ["verdict", "tests_run", "findings", "not_checked", "regression_checks"],
+  "required": ["verdict", "tests_run", "findings", "not_checked", "regression_checks", "removed_checks"],
   "properties": {
     "verdict": { "type": "string", "enum": ["pass", "fail"] },
     "tests_run": {
@@ -32,8 +32,8 @@
     },
     "not_checked": { "type": "array", "items": { "type": "string" }, "description": "Lenses or areas you could not check, and why" },
     "regression_checks": {
-      "type": ["array", "null"],
-      "description": "Populated in the fix flow to verify each regression test fails on base and passes now; null otherwise",
+      "type": "array",
+      "description": "One entry per regression test in the fix flow, verifying it fails on base and passes now; an empty array in other flows",
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -43,6 +43,20 @@
           "fails_on_base": { "type": "boolean" },
           "passes_now": { "type": "boolean" },
           "how": { "type": "string", "description": "How base failure and current pass were verified" }
+        }
+      }
+    },
+    "removed_checks": {
+      "type": "array",
+      "description": "One entry per line of the brief's removed-checks list; an empty array when the brief has none",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["line", "safe", "reason"],
+        "properties": {
+          "line": { "type": "string", "description": "The removed line as listed in the brief" },
+          "safe": { "type": "boolean" },
+          "reason": { "type": "string" }
         }
       }
     }
