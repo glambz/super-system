@@ -311,6 +311,7 @@ Gate 1 takes a minute to pick a direction. Gate 2 takes a minute to read a plan.
 7. **Invariant-based fix briefs**: fix briefs state what must hold after the fix without prescribing an unverified mechanism.
 8. **Early polish groups**: a polish group can start as soon as its files no longer overlap any active or pending task.
 9. **Runner follow-ups**: `results/<name>.meta` is documented in the run folder list, implementer rounds changing parsing, encoding, or matching get a cheap probe before review, and shipped helper scripts stay UTF-8-safe regardless of console code page.
+10. **Polish pattern scope & UTF-8 test output**: polish briefs for a repeated minor name the pattern so implementers check every similar place in their files allowed, and `tests/check_skill.py` and `tests/check_scripts.py` print UTF-8 `FAIL:` lines regardless of console code page.
 
 ### What's new in v3.1
 

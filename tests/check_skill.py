@@ -61,6 +61,7 @@ REQUIRED_PHRASES = {
         "keyed by track", "cli.tools",
         "fix-round size", "polish round", "accepted minors",
         "polish group may start early", "one last group",
+        "repeated pattern", "not only the cited lines",
     ],
     "references/track-ui.md": [
         "never silently erase", "tasteFile", "designLibrary", "1440", "390", "44px",
@@ -355,6 +356,8 @@ def check_techniques():
 
 
 def main():
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     fails = []
     for check in (check_frontmatter, check_size, check_banned, check_models_only_in_platforms,
                   check_refs, check_phrases, check_once, check_contrast, check_schemas, check_role_files,

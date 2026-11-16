@@ -888,6 +888,8 @@ def check_contrast_check_functional():
 
 
 def main():
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     fails = []
     for check in (
         check_exists_and_headers,
